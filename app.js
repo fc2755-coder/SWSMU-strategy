@@ -21,11 +21,10 @@
       ] },
     { id: 'earnings', name: '盈利情况', icon: '盈', dataKey: 'earnings',
       children: [
-        { name: '盈利增速截面', section: '盈利增速截面' },
-        { name: '预期修正（本周vs上周）', section: '预期修正' },
-        { name: '增速二阶导', section: '增速二阶导' },
-        { name: 'ROE', section: 'ROE' },
-        { name: '风格历史增速', section: '风格历史增速' }
+        { name: 'A股整体', section: 'A股整体' },
+        { name: '风格指数', section: '风格指数' },
+        { name: '申万一级行业', section: '申万一级行业' },
+        { name: '申万二级行业', section: '申万二级行业' }
       ] },
     { id: 'sentiment', name: '情绪指标', icon: '情', dataKey: 'sentiment',
       children: [
@@ -822,247 +821,199 @@
     return (v * 100).toFixed(1);
   }
 
-  function sortByG(rows, key) {
-    return rows.slice().sort(function (a, b) {
-      var av = a[key] == null ? -Infinity : a[key];
-      var bv = b[key] == null ? -Infinity : b[key];
+  /* ---------------- 盈利（时间序列视图） ---------------- */
+  var EARN_PAGES = [
+    { sec: 'A股整体', cat: 'A股', label: 'A股整体' },
+    { sec: '风格指数', cat: '风格', label: '风格指数' },
+    { sec: '申万一级行业', cat: '一级行业', label: '申万一级行业' },
+    { sec: '申万二级行业', cat: '二级行业', label: '申万二级行业' }
+  ];
+
+  function earnTS() {
+    return D.earnings_ts || { profit: { series: [] }, roe: { series: [] }, cmp: { rows: [] } };
+  }
+
+  function earnSeriesOf(cat, kind) {
+    var arr = (earnTS()[kind] && earnTS()[kind].series) || [];
+    return arr.filter(function (s) { return s.cat === cat; });
+  }
+
+  function earnCmpOf(cat, name) {
+    var rows = (earnTS().cmp && earnTS().cmp.rows) || [];
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].cat === cat && rows[i].name === name) return rows[i];
+    }
+    return null;
+  }
+
+  function earnSortByG(cat, list) {
+    return list.slice().sort(function (a, b) {
+      var ca = earnCmpOf(cat, a.name), cb = earnCmpOf(cat, b.name);
+      var av = (ca && ca.g26e != null) ? ca.g26e : -1e9;
+      var bv = (cb && cb.g26e != null) ? cb.g26e : -1e9;
       return bv - av;
     });
   }
 
-  // 盈利增速：26H1 / 26E / 27E —— 折线（按26E降序排列，便于横向比较）
-  function growthBars(container, cat) {
-    var rows = D.earnings.rows.filter(function (r) { return r.cat === cat; });
-    if (!rows.length) return;
-    rows = sortByG(rows, 'g26e');
-    var card = makeCard('盈利增速：26H1实际 / 26E / 27E一致预期（' + cat + '）', '%', '2026-09-20', true,
-      '26H1=2026上半年实际增速；26E/27E=分析师一致预期汇总增速（本周口径）。'
-      + '按26E增速降序排列，便于观察三条线的整体梯度与背离行业。', '盈利增速' + cat);
-    container.appendChild(card);
-    var body = card.querySelector('.card-body');
-    if (rows.length > 40) body.style.height = Math.max(320, Math.round(rows.length * 5.5) + 90) + 'px';
-    var chart = echarts.init(body);
-    chart.setOption({
-      color: ['#94a3b8', '#2563eb', '#dc2626'],
-      grid: { left: 60, right: 20, top: 42, bottom: 62 },
-      legend: { top: 4, data: ['26H1', '26E', '27E'], icon: 'roundRect', itemWidth: 14, itemHeight: 3,
-                textStyle: { fontSize: 12, color: '#4b5563' } },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'line' },
-        backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
-        textStyle: { color: '#1f2430', fontSize: 12 },
-        valueFormatter: function (v) { return v == null ? '-' : (v * 100).toFixed(1) + '%'; } },
-      xAxis: { type: 'category', data: rows.map(function (r) { return r.name; }),
-        axisLabel: { color: '#6b7280', fontSize: 9, rotate: 60, interval: 'auto' },
-        axisLine: { lineStyle: { color: '#d5dae3' } } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11,
-                 formatter: function (v) { return (v * 100).toFixed(0) + '%'; } },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: [
-        { name: '26H1', type: 'line', showSymbol: false, connectNulls: true,
-          lineStyle: { width: 1.3 }, data: rows.map(function (r) { return r.g26h1; }) },
-        { name: '26E', type: 'line', showSymbol: false, connectNulls: true,
-          lineStyle: { width: 1.9 }, data: rows.map(function (r) { return r.g26e; }) },
-        { name: '27E', type: 'line', showSymbol: false, connectNulls: true,
-          lineStyle: { width: 1.5 }, data: rows.map(function (r) { return r.g27e; }) }
-      ]
+  // 全览：多线时间序列（对象多时取代表样本，避免面条图）
+  function earnOverview(grid, cat, label, kind, title, unit, note) {
+    var all = earnSeriesOf(cat, kind);
+    if (!all.length) return;
+    var shown = all, trimmed = false;
+    if (all.length > 16) {
+      var srt = earnSortByG(cat, all);
+      var head = srt.slice(0, 8), tail = srt.slice(-4), seen = {};
+      shown = head.concat(tail).filter(function (s) {
+        if (seen[s.name]) return false;
+        seen[s.name] = 1; return true;
+      });
+      trimmed = true;
+    }
+    var card = makeCard(title + ' · ' + label, unit, '2026-09-20', true,
+      note + (trimmed ? '（对象较多，此处展示 26E 增速最高 8 个与最低 4 个；完整列表见下方「单对象」图）' : '')
+      + '纵轴已按 2%~98% 分位裁剪，极端值不显示以免压缩其他曲线。', '盈利' + kind + cat);
+    grid.appendChild(card);
+    var chart = echarts.init(card.querySelector('.card-body'));
+    var opt = baseLineOption(unit);
+    // 纵轴按分位裁剪，避免极端值压扁整体
+    var allv = [];
+    shown.forEach(function (s) {
+      s.values.forEach(function (v) { if (v != null && isFinite(v)) allv.push(v); });
     });
+    if (allv.length > 8) {
+      allv.sort(function (a, b) { return a - b; });
+      var q = function (p) { return allv[Math.min(allv.length - 1, Math.max(0, Math.floor(allv.length * p)))]; };
+      var lo = q(0.02), hi = q(0.98);
+      if (kind === 'profit') {
+        opt.yAxis.min = Math.max(Math.min(lo, 0) * 1.15, -300);
+        opt.yAxis.max = Math.min(hi * 1.15, 400);
+      }
+    }
+    opt.legend = { top: 2, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 3,
+      textStyle: { fontSize: 11, color: '#4b5563' } };
+    opt.series = shown.map(function (s) {
+      return { name: s.name, type: 'line', showSymbol: false, connectNulls: true,
+        lineStyle: { width: 1.4 }, emphasis: { focus: 'series' },
+        data: pairDates(s.dates, s.values) };
+    });
+    chart.setOption(opt);
     charts.push(chart);
-    registerCard(card, chart, '盈利增速 ' + cat + ' ' + rows.map(function (r) { return r.name; }).join(' '));
+    addZoomHover(card, chart);
+    registerCard(card, chart, title + cat + ' ' + shown.map(function (s) { return s.name; }).join(' '));
   }
 
-  // 26E 盈利增速：本周 vs 上周（一致预期修正方向）
-  function growthCompare(container, cat) {
-    var rows = D.earnings.rows.filter(function (r) {
-      return r.cat === cat && r.g26e != null && r.g26e_prev != null;
-    });
-    if (!rows.length) return;
-    rows = sortByG(rows, 'g26e');
-    var nUp = rows.filter(function (r) { return r.g26e > r.g26e_prev + 1e-9; }).length;
-    var nDn = rows.filter(function (r) { return r.g26e < r.g26e_prev - 1e-9; }).length;
-    var avgChg = rows.reduce(function (a, r) { return a + (r.g26e - r.g26e_prev); }, 0) / rows.length;
-    var card = makeCard('26E盈利增速：本周 vs 上周（' + cat + '）', '%', '2026-09-20', true,
-      '两列一致预期汇总：上周（截至' + '09-13' + '）与本周（截至' + '09-20' + '）。'
-      + '共 ' + rows.length + ' 项，其中上修 ' + nUp + ' 项、下修 ' + nDn + ' 项，'
-      + '平均变动 ' + (avgChg >= 0 ? '+' : '') + (avgChg * 100).toFixed(2) + 'pp。'
-      + '两线贴近=预期稳定；劈叉=盈利预期正在被系统性修正。', '盈利修正' + cat);
-    container.appendChild(card);
-    var body = card.querySelector('.card-body');
-    if (rows.length > 40) body.style.height = Math.max(320, Math.round(rows.length * 5.5) + 90) + 'px';
-    var chart = echarts.init(body);
-    chart.setOption({
-      color: ['#94a3b8', '#2563eb'],
-      grid: { left: 60, right: 20, top: 42, bottom: 62 },
-      legend: { top: 4, data: ['26E 上周', '26E 本周'], icon: 'roundRect', itemWidth: 14, itemHeight: 3,
-                textStyle: { fontSize: 12, color: '#4b5563' } },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'line' },
-        backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
-        textStyle: { color: '#1f2430', fontSize: 12 },
-        valueFormatter: function (v) { return v == null ? '-' : (v * 100).toFixed(1) + '%'; } },
-      xAxis: { type: 'category', data: rows.map(function (r) { return r.name; }),
-        axisLabel: { color: '#6b7280', fontSize: 9, rotate: 60, interval: 'auto' },
-        axisLine: { lineStyle: { color: '#d5dae3' } } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11,
-                 formatter: function (v) { return (v * 100).toFixed(0) + '%'; } },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: [
-        { name: '26E 上周', type: 'line', showSymbol: false, connectNulls: true,
-          lineStyle: { width: 1.3, type: 'dashed' }, data: rows.map(function (r) { return r.g26e_prev; }) },
-        { name: '26E 本周', type: 'line', showSymbol: false, connectNulls: true,
-          lineStyle: { width: 1.9 }, data: rows.map(function (r) { return r.g26e; }) }
-      ]
-    });
-    charts.push(chart);
-    registerCard(card, chart, '盈利修正 本周 上周 ' + cat + ' ' + rows.map(function (r) { return r.name; }).join(' '));
-  }
+  // 单对象两张图：净利润增速（末端 26E 点 + 本周vs上周标注）、ROE-TTM
+  function earnPickers(grid, cat, label) {
+    var pList = earnSeriesOf(cat, 'profit');
+    var rList = earnSeriesOf(cat, 'roe');
+    var names = [];
+    pList.concat(rList).forEach(function (s) { if (names.indexOf(s.name) < 0) names.push(s.name); });
+    if (!names.length) return;
 
-  function accelBars(container, cat) {
-    var rows = D.earnings.rows.filter(function (r) { return r.cat === cat && r.accel != null && isFinite(r.accel); })
-      .map(function (r) { return { name: r.name, v: r.accel }; });
-    if (!rows.length) return;
-    rows.sort(function (a, b) { return b.v - a.v; });
-    var card = makeCard('盈利增速二阶导：27E − 26E（' + cat + '）', 'pp', '2026-09-20', true,
-      '二阶导 = 27E增速 − 26E增速（百分点）。>0 表示一致预期仍在加速（二阶改善），<0 表示增速见顶回落。'
-      + '按二阶导降序排列，红线为 0 轴分界。', '二阶导' + cat);
-    container.appendChild(card);
-    var body = card.querySelector('.card-body');
-    if (rows.length > 40) body.style.height = Math.max(320, Math.round(rows.length * 5.5) + 90) + 'px';
-    var chart = echarts.init(body);
-    chart.setOption({
-      grid: { left: 60, right: 20, top: 26, bottom: 62 },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'line' },
-        backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
-        textStyle: { color: '#1f2430', fontSize: 12 },
-        valueFormatter: function (v) { return v == null ? '-' : (v * 100).toFixed(1) + ' pp'; } },
-      xAxis: { type: 'category', data: rows.map(function (r) { return r.name; }),
-        axisLabel: { color: '#6b7280', fontSize: 9, rotate: 60, interval: 'auto' },
-        axisLine: { lineStyle: { color: '#d5dae3' } } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11,
-                 formatter: function (v) { return (v * 100).toFixed(0) + 'pp'; } },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: [{
-        name: '二阶导', type: 'line', showSymbol: false, connectNulls: true,
-        lineStyle: { width: 1.8, color: '#7c3aed' }, itemStyle: { color: '#7c3aed' },
-        areaStyle: { color: 'rgba(124,58,237,0.06)' },
-        data: rows.map(function (r) { return r.v; }),
-        markLine: { silent: true, symbol: 'none', lineStyle: { color: '#dc2626', width: 1, type: 'dashed' },
-          data: [{ yAxis: 0, label: { formatter: '0', fontSize: 10, color: '#dc2626' } }] }
-      }]
-    });
-    charts.push(chart);
-    registerCard(card, chart, '二阶导 ' + cat + ' ' + rows.map(function (r) { return r.name; }).join(' '));
-  }
-
-  function roeTimeline(container, cat, picker) {
-    var roe = D.valuation.roe;
-    var src = roe.series.filter(function (s) { return s.cat === cat; }).map(function (s) {
-      return { name: s.name, latest: s.latest != null ? s.latest * 100 : null,
-               pct: s.pct, values: s.values.map(function (v) { return v != null ? v * 100 : null; }) };
-    });
-    if (!src.length) return;
-    var dates = roe.dates.map(function (d) { return d.slice(0, 10); });
-    if (picker) {
-      var title = '单' + cat + ' ROE-TTM 走势（季度）';
-      var card = makeCard(title, '%', dates[dates.length - 1], true,
-        'ROE-TTM 季度序列（2015Q1 起）。下拉切换。', 'ROE' + cat + 'picker');
+    function mkPicker(title, unit, note, key) {
+      var card = makeCard(title, unit, '2026-09-20', true, note, key);
       var head = card.querySelector('.card-header');
       var sel = document.createElement('select');
       sel.className = 'roll-select';
-      src.forEach(function (s) {
-        var op = document.createElement('option');
-        op.value = s.name; op.textContent = s.name;
-        sel.appendChild(op);
+      names.forEach(function (n) {
+        var o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o);
       });
       head.insertBefore(sel, card.querySelector('.card-date'));
-      container.appendChild(card);
+      grid.appendChild(card);
       var chart = echarts.init(card.querySelector('.card-body'));
-      var opt = baseLineOption('%');
-      opt.yAxis.max = function (v) { return Math.max(0.35, v.max); };
-      chart.setOption(opt);
-      function load(name) {
-        var s = src.filter(function (x) { return x.name === name; })[0];
-        chart.setOption({ series: [{ name: name, type: 'line', showSymbol: false,
-          lineStyle: { width: 1.8, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
-          emphasis: { focus: 'series' }, data: s ? pairDates(dates, s.values) : [] }] });
-      }
-      sel.onchange = function () { load(sel.value); };
-      load(src[0].name);
       charts.push(chart);
       addZoomHover(card, chart);
-      registerCard(card, chart, 'ROE ' + cat + ' ' + src.map(function (s) { return s.name; }).join(' '));
-    } else {
-      groupLine(container, 'ROE-TTM · ' + cat + '（季度）', '%', dates, src, cat === '风格' ? false : true,
-        null, 'ROE' + cat);
+      return { card: card, chart: chart, sel: sel };
     }
-    // ROE 最新截面（折线，按 ROE 降序）
-    var rows = src.filter(function (s) { return s.latest != null; })
-      .map(function (s) { return { name: s.name, v: s.latest, pct: s.pct }; })
-      .sort(function (a, b) { return b.v - a.v; });
-    var card2 = makeCard('ROE-TTM 最新截面（' + cat + '）', '%', dates[dates.length - 1], true,
-      '按 ROE 降序排列（折线）。tooltip 内含近十年季度分位。', 'ROE截面' + cat);
-    container.appendChild(card2);
-    var rb2 = card2.querySelector('.card-body');
-    if (rows.length > 40) rb2.style.height = Math.max(320, Math.round(rows.length * 5.5) + 90) + 'px';
-    var ch2 = echarts.init(rb2);
-    ch2.setOption({
-      grid: { left: 60, right: 24, top: 26, bottom: 62 },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'line' },
-        backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
-        textStyle: { color: '#1f2430', fontSize: 12 },
-        formatter: function (ps) {
-          var i = ps[0].dataIndex;
-          var r = rows[i];
-          return r.name + '：' + r.v.toFixed(2) + '%'
-            + (r.pct != null ? '（近10年分位 ' + Math.round(r.pct * 100) + '%）' : '');
-        } },
-      xAxis: { type: 'category', data: rows.map(function (r) { return r.name; }),
-        axisLabel: { color: '#6b7280', fontSize: 9, rotate: 60, interval: 'auto' },
-        axisLine: { lineStyle: { color: '#d5dae3' } } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11,
-                 formatter: function (v) { return v.toFixed(0) + '%'; } },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: [{
-        name: 'ROE-TTM', type: 'line', showSymbol: false, connectNulls: true,
-        lineStyle: { width: 1.8, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
-        data: rows.map(function (r) { return +r.v.toFixed(2); }),
-        markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c3c9d4', width: 1, type: 'dashed' },
-          data: [{ yAxis: 0, label: { show: false } }] }
-      }]
-    });
-    charts.push(ch2);
-    registerCard(card2, ch2, 'ROE截面 ' + cat + ' ' + rows.map(function (r) { return r.name; }).join(' '));
+
+    var P = mkPicker('净利润增速 · 单' + label + '（%，同比）', '%',
+      '季度/年度同比增速（历史为实际值），末端菱形点为 26E/27E 一致预期，红色标注为本周相对上周的调整（↑上调/↓下调，单位 pp）。下拉切换对象。',
+      '盈利单' + cat + 'P');
+    var R = mkPicker('ROE-TTM · 单' + label + '（%）', '%',
+      'ROE-TTM 季度序列（2015Q1 起）。下拉切换对象。', '盈利单' + cat + 'R');
+
+    function loadP(name) {
+      var s = pList.filter(function (x) { return x.name === name; })[0];
+      var opt = baseLineOption('%');
+      if (!s) { P.chart.setOption(opt); return; }
+      var pts = pairDates(s.dates, s.values);
+      var cmp = earnCmpOf(cat, name);
+      var extra = [];
+      if (cmp) {
+        var lastY = Number((s.dates[s.dates.length - 1] || '2026-06-30').slice(0, 4));
+        var fy26 = Math.max(lastY, 2026);
+        if (cmp.g26e != null) extra.push(['2026-12-31', cmp.g26e]);
+        if (cmp.g27e != null) extra.push(['2027-12-31', cmp.g27e]);
+        if (cmp.g26e != null && fy26 > 2026) extra[0] = [fy26 + '-12-31', cmp.g26e];
+      }
+      var line = pts.concat(extra);
+      opt.series = [{ name: name, type: 'line', showSymbol: false, connectNulls: true,
+        lineStyle: { width: 1.9, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
+        emphasis: { focus: 'series' }, data: line }];
+      // 26E 点标注：数值 + 本周vs上周调整
+      if (cmp && cmp.g26e != null) {
+        var chg = cmp.chg_pp;
+        var txt;
+        if (chg == null || Math.abs(chg) < 0.05) {
+          txt = '{v|' + num1(cmp.g26e) + '}';
+        } else {
+          txt = '{v|' + num1(cmp.g26e) + '}\n' + (chg >= 0 ? '↑' : '↓') + Math.abs(chg).toFixed(1) + 'pp\n{c|vs上周}';
+        }
+        opt.series[0].markPoint = {
+          symbol: 'diamond', symbolSize: 11,
+          itemStyle: { color: '#dc2626' },
+          label: {
+            show: true, position: 'top', distance: 6, fontSize: 11, lineHeight: 14,
+            formatter: txt,
+            rich: { v: { color: '#dc2626', fontWeight: 'bold', fontSize: 12 },
+                    c: { color: '#9ca3af', fontSize: 9 } }
+          },
+          data: [{ coord: ['2026-12-31', cmp.g26e], value: cmp.g26e }]
+        };
+        if (extra.length && extra[0][0] !== '2026-12-31') {
+          opt.series[0].markPoint.data = [{ coord: extra[0], value: cmp.g26e }];
+        }
+      }
+      P.chart.setOption(opt);
+    }
+
+    function loadR(name) {
+      var s = rList.filter(function (x) { return x.name === name; })[0];
+      var opt = baseLineOption('%');
+      opt.series = s ? [{ name: name, type: 'line', showSymbol: false, connectNulls: true,
+        lineStyle: { width: 1.9, color: '#7c3aed' }, itemStyle: { color: '#7c3aed' },
+        emphasis: { focus: 'series' }, data: pairDates(s.dates, s.values) }] : [];
+      R.chart.setOption(opt);
+    }
+
+    P.sel.onchange = function () { loadP(P.sel.value); };
+    R.sel.onchange = function () { loadR(R.sel.value); };
+    if (pList.length) { P.sel.value = pList[0].name; loadP(pList[0].name); }
+    if (rList.length) { R.sel.value = rList[0].name; loadR(rList[0].name); }
   }
 
-  function styleHistory(container) {
+  // 风格历史增速（2010-2026E 年度，作为风格子页补充）
+  function styleHistory(grid) {
     var hist = D.earnings.style_history;
+    if (!hist || !hist.years) return;
     var years = hist.years;
     var card = makeCard('风格指数年度盈利增速（2010-2026E）', '%', '2026-09-20', true,
-      '历史为实际增速；2025/2026E 为一致预期。覆盖中信风格/申万大小盘/高低估值/高低盈利/动量反转/光模块/存储）。', '风格历史增速');
-    container.appendChild(card);
+      '历史为实际增速；2025/2026E 为一致预期。覆盖中信风格/申万大小盘/高低估值/高低盈利/动量反转等。', '风格历史增速');
+    grid.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
-    var series = hist.series.map(function (s, si) {
-      return { name: s.name, type: 'bar', stack: null,
-        data: years.map(function (y, yi) { return s.values[yi] != null ? s.values[yi] : null; }),
-        barMaxWidth: 7,
-        itemStyle: { borderRadius: [1, 1, 0, 0] },
-        emphasis: { focus: 'series' } };
+    var opt = baseLineOption('%');
+    opt.legend = { top: 2, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 3,
+      textStyle: { fontSize: 11, color: '#4b5563' } };
+    opt.series = hist.series.map(function (s) {
+      return { name: s.name, type: 'line', showSymbol: false, connectNulls: true,
+        lineStyle: { width: 1.4 }, emphasis: { focus: 'series' },
+        data: years.map(function (y, yi) {
+          return [y.length === 4 ? y + '-12-31' : y, s.values[yi]];
+        }).filter(function (d) { return d[1] != null; }) };
     });
-    chart.setOption({
-      color: PALETTE.concat(['#64748b', '#a16207', '#be123c', '#0369a1', '#15803d', '#7e22ce', '#4338ca', '#b91c1c']),
-      grid: { left: 52, right: 20, top: 42, bottom: 32 },
-      legend: { top: 4, type: 'scroll', icon: 'roundRect', itemWidth: 14, itemHeight: 3,
-                textStyle: { fontSize: 11, color: '#4b5563' } },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
-        backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
-        textStyle: { color: '#1f2430', fontSize: 12 },
-        valueFormatter: function (v) { return v == null ? '-' : v.toFixed(1) + '%'; } },
-      xAxis: { type: 'category', data: years,
-        axisLabel: { color: '#6b7280', fontSize: 11 },
-        axisLine: { lineStyle: { color: '#d5dae3' } } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11, formatter: '{value}%' },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: series
-    });
+    chart.setOption(opt);
     charts.push(chart);
+    addZoomHover(card, chart);
     registerCard(card, chart, '风格历史增速 ' + hist.series.map(function (s) { return s.name; }).join(' '));
   }
 
@@ -1070,60 +1021,19 @@
     var grid = document.createElement('div');
     grid.className = 'grid';
     container.appendChild(grid);
-    if (!section || section === '盈利增速截面') {
-      var h = document.createElement('div'); h.className = 'section-title'; h.textContent = '盈利增速截面（折线）'; grid.appendChild(h);
-      ['风格', 'A股', '一级行业', '二级行业'].forEach(function (cat) { growthBars(grid, cat); });
-    }
-    if (!section || section === '预期修正') {
-      var h5 = document.createElement('div'); h5.className = 'section-title'; h5.textContent = '26E 预期修正：本周 vs 上周（折线）'; grid.appendChild(h5);
-      ['风格', 'A股', '一级行业', '二级行业'].forEach(function (cat) { growthCompare(grid, cat); });
-    }
-    if (!section || section === '增速二阶导') {
-      var h2 = document.createElement('div'); h2.className = 'section-title'; h2.textContent = '增速二阶导（27E−26E，折线）'; grid.appendChild(h2);
-      ['风格', 'A股', '一级行业', '二级行业'].forEach(function (cat) { accelBars(grid, cat); });
-    }
-    if (!section || section === 'ROE') {
-      var h3 = document.createElement('div'); h3.className = 'section-title'; h3.textContent = 'ROE'; grid.appendChild(h3);
-      roeTimeline(grid, '风格', false);
-      roeTimeline(grid, 'A股', false);
-      roeTimeline(grid, '一级行业', true);
-      roeTimeline(grid, '二级行业', true);
-    }
-    if (!section || section === '风格历史增速') {
-      var h4 = document.createElement('div'); h4.className = 'section-title'; h4.textContent = '风格历史增速（2010-2026E）'; grid.appendChild(h4);
-      styleHistory(grid);
-    }
-  }
-
-  /* ---------------- 情绪 ---------------- */
-  function rollingMeanSD(values, w) {
-    var mean = new Array(values.length).fill(null);
-    var sd = new Array(values.length).fill(null);
-    var sum = 0, sumsq = 0, q = [];
-    // 收集所有非空值的索引，先用可用数据计算部分窗口
-    var validIndices = [];
-    for (var i = 0; i < values.length; i++) {
-      if (values[i] != null) validIndices.push(i);
-    }
-    for (var i = 0; i < values.length; i++) {
-      var v = values[i];
-      if (v != null) { q.push(v); sum += v; sumsq += v * v; }
-      while (q.length > w) { var o = q.shift(); sum -= o; sumsq -= o * o; }
-      // 满窗用满窗；不满窗但已有一定数据(≥w*0.5)也计算
-      if (q.length === w) {
-        var m = sum / w;
-        var varr = Math.max(sumsq / w - m * m, 0);
-        mean[i] = +m.toFixed(5);
-        sd[i] = +Math.sqrt(varr).toFixed(5);
-      } else if (q.length >= Math.max(10, Math.floor(w * 0.5)) && q.length < w && i === values.length - 1) {
-        // 末尾不满窗：用已有数据算
-        var m = sum / q.length;
-        var varr = Math.max(sumsq / q.length - m * m, 0);
-        mean[i] = +m.toFixed(5);
-        sd[i] = +Math.sqrt(varr).toFixed(5);
-      }
-    }
-    return { mean: mean, sd: sd };
+    EARN_PAGES.forEach(function (pg) {
+      if (section && section !== pg.sec) return;
+      var h = document.createElement('div');
+      h.className = 'section-title';
+      h.textContent = pg.label + '（净利润增速 · ROE · 时间序列）';
+      grid.appendChild(h);
+      earnOverview(grid, pg.cat, pg.label, 'profit', '净利润增速（同比）', '%',
+        '所属对象的净利润同比增速时间序列。行业为季度（iFinD 板块口径，2019 起），风格为年度（2010 起）。');
+      earnOverview(grid, pg.cat, pg.label, 'roe', 'ROE-TTM', '%',
+        'ROE-TTM 季度序列（底稿口径，2015Q1 起）。');
+      earnPickers(grid, pg.cat, pg.label);
+      if (pg.cat === '风格') styleHistory(grid);
+    });
   }
 
   function renderERP(container) {
@@ -2993,7 +2903,7 @@
     D = window.DASH || {};  // 外挂模式：此时数据已 fetch 完成
     // 补全缺失模块，避免因单个模块加载失败导致渲染崩溃
     ['meta', 'valuation', 'earnings', 'sentiment', 'macro_cn', 'liquidity',
-     'macro_global', 'scoring', 'hf_macro', 'ai_pressure'].forEach(function (k) {
+     'macro_global', 'scoring', 'hf_macro', 'ai_pressure', 'earnings_ts'].forEach(function (k) {
       if (!D[k]) D[k] = {};
     });
     var h = (location.hash || '').replace('#', '');

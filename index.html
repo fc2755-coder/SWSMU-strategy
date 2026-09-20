@@ -294,14 +294,14 @@ body {
  </main>
 </div>
 
-<script src="echarts.min.js?v=202609201935"></script>
-<script src="app.js?v=202609201935"></script>
+<script src="echarts.min.js?v=202609201951"></script>
+<script src="app.js?v=202609201951"></script>
 <script>
 /* 外挂数据模式：并行拉取 data/*.json，就绪后派发 dash-ready */
 (async function () {
   var modules = ['meta', 'valuation', 'earnings', 'sentiment', 'macro_cn',
                  'liquidity', 'macro_global', 'scoring', 'hf_macro',
-                 'hf_charts', 'ai_pressure', 'weekly_market'];
+                 'hf_charts', 'ai_pressure', 'weekly_market', 'earnings_ts'];
   var DASH = {};
   var ts = Date.now();  // 破缓存
   var results = await Promise.allSettled(modules.map(function (m) {
