@@ -1130,7 +1130,7 @@
     registerCard(card, chart, 'ERP 股权风险溢价 中证全指 股债性价比 均值 标准差');
   }
 
-  function breadthChart(container, title, values, refLines, unit, note, key) {
+  function breadthChart(container, title, values, refLines, unit, note, key, withIndex) {
     var b = D.sentiment.breadth;
     var card = makeCard(title, unit, b.dates[b.dates.length - 1], false, note, key);
     container.appendChild(card);
@@ -1142,6 +1142,23 @@
       emphasis: { focus: 'series' },
       data: pairDates(b.dates, values)
     }];
+    // 叠加全A行情（右轴），用于观察指标与指数的同步/背离
+    if (withIndex && b.index_close) {
+      opt.grid.right = 58;
+      opt.yAxis = [
+        { type: 'value', scale: true,
+          axisLabel: { color: '#6b7280', fontSize: 11 },
+          splitLine: { lineStyle: { color: '#eef1f6' } } },
+        { type: 'value', scale: true, name: b.index_name || '指数', position: 'right',
+          nameTextStyle: { color: '#94a3b8', fontSize: 11 },
+          axisLabel: { color: '#94a3b8', fontSize: 11 }, splitLine: { show: false } }
+      ];
+      opt.series.push({
+        name: (b.index_name || '指数') + '（右轴）', type: 'line', yAxisIndex: 1, showSymbol: false,
+        lineStyle: { width: 1.5, color: '#94a3b8' }, itemStyle: { color: '#94a3b8' },
+        emphasis: { focus: 'series' }, data: pairDates(b.dates, b.index_close)
+      });
+    }
     if (refLines) {
       opt.series[0].markLine = { silent: true, symbol: 'none',
         lineStyle: { type: 'dashed', width: 1 },
@@ -1367,7 +1384,9 @@
       container.appendChild(grid1);
       breadthChart(grid1, '站上30日均线个股比例（全A）', D.sentiment.breadth.above_ma30_pct,
         [{ v: 70, c: '#dc2626', t: '70%' }, { v: 50, c: '#94a3b8', t: '50%' }, { v: 30, c: '#16a34a', t: '30%' }],
-        '%', '全A个股收盘价>其30日均线（不复权）的比例。全A个股（5591只）逐日计算，2025-07起。>70%普涨过热、<30%普跌超卖。', '站上30日均线比例');
+        '%', '全A个股收盘价>其30日均线（不复权）的比例。全A个股（5591只）逐日计算，2025-07起。>70%普涨过热、<30%普跌超卖。'
+        + '灰线为右轴中证全指收盘，用于观察广度与指数走势的同步/背离（指数新高而广度不创新高=上涨结构变窄）。',
+        '站上30日均线比例', true);
       breadthChart(grid1, '全A日成交额', D.sentiment.breadth.all_a_amt_yi,
         null, '千亿元', '全A成交额（由个股面板加总，20千亿元=2万亿元量能水位）。', '全A成交额');
     }
