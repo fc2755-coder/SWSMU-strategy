@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var D = window.DASH;
+  var D = null;  // 由 boot() 在数据就绪后赋值（外挂JSON模式）；内嵌模式立即有值
   var PALETTE = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d',
                  '#475569', '#b45309', '#0d9488', '#9333ea', '#65a30d'];
 
@@ -2659,6 +2659,7 @@
   // 初始路由：支持 #valuation/申万一级行业 直达
   // 等待数据加载完成（支持外挂JSON和内嵌数据两种模式）
   function boot() {
+    D = window.DASH;  // 外挂模式：此时数据已 fetch 完成
     var h = (location.hash || '').replace('#', '');
     if (h) {
       var parts = h.split('/');

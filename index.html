@@ -293,14 +293,30 @@ body {
     <section id="content"></section>
   </main>
 </div>
+
+<script src="echarts.min.js"></script>
+<script src="app.js"></script>
 <script>
-{{ECHARTS}}
-</script>
-<script>
-{{DATA}}
-</script>
-<script>
-{{APP_JS}}
+/* 外挂数据模式：并行拉取 data/*.json，就绪后派发 dash-ready */
+(async function () {
+  var modules = ['meta', 'valuation', 'earnings', 'sentiment', 'macro_cn',
+                 'liquidity', 'macro_global', 'scoring', 'hf_macro', 'ai_pressure'];
+  var DASH = {};
+  var ts = Date.now();  // 破缓存
+  var results = await Promise.allSettled(modules.map(function (m) {
+    return fetch('data/' + m + '.json?t=' + ts).then(function (r) {
+      return r.ok ? r.json() : Promise.reject(m);
+    });
+  }));
+  var failed = [];
+  results.forEach(function (r, i) {
+    if (r.status === 'fulfilled') DASH[modules[i]] = r.value;
+    else failed.push(modules[i]);
+  });
+  if (failed.length) console.warn('数据加载失败:', failed.join(', '));
+  window.DASH = DASH;
+  window.dispatchEvent(new Event('dash-ready'));
+})();
 </script>
 </body>
 </html>
