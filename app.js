@@ -2622,21 +2622,32 @@
     document.getElementById('topbar-sub').textContent = subs[id] || '';
     var content = document.getElementById('content');
     content.innerHTML = '';
-    if (id === 'overview') { renderOverview(content); }
-    else if (id === 'valuation') { renderToolbar(content); renderValuation(content, section); }
-    else if (id === 'earnings') { renderToolbar(content); renderEarnings(content, section); }
-    else if (id === 'sentiment') { renderToolbar(content); renderSentiment(content, section); }
-    else if (id === 'macro_cn') {
-      if (section === 'hf') { renderHighFreq(content); }
-      else { renderMacroCn(content); }
+    try {
+      if (id === 'overview') { renderOverview(content); }
+      else if (id === 'valuation') { renderToolbar(content); renderValuation(content, section); }
+      else if (id === 'earnings') { renderToolbar(content); renderEarnings(content, section); }
+      else if (id === 'sentiment') { renderToolbar(content); renderSentiment(content, section); }
+      else if (id === 'macro_cn') {
+        if (section === 'hf') { renderHighFreq(content); }
+        else { renderMacroCn(content); }
+      }
+      else if (id === 'liquidity') { renderLiquidity(content); }
+      else if (id === 'macro_global') {
+        if (section === 'ai') { renderAIPressure(content); }
+        else { renderMacroGlobal(content); }
+      }
+      else if (id === 'scoring') { renderScoring(content); }
+      else { renderEmpty(content, mod); }
+    } catch (err) {
+      // 单个模块渲染失败不应导致整页白屏
+      console.error('[DashBoard] 模块渲染失败:', id, err);
+      content.innerHTML = '<div class="empty"><div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:8px;">'
+        + '「' + mod.name + '」渲染出错</div>'
+        + '<div style="font-size:12px;color:#6b7280;line-height:1.8;">'
+        + '缺失数据模块：' + (D && Object.keys(D).filter(function (k) { return D[k] && Object.keys(D[k]).length === 0; }).join(', ') || '无')
+        + '<br>错误：' + (err && err.message ? err.message : String(err))
+        + '<br><br>请刷新页面重试；若持续出现，检查浏览器控制台（F12）的网络面板。</div></div>';
     }
-    else if (id === 'liquidity') { renderLiquidity(content); }
-    else if (id === 'macro_global') {
-      if (section === 'ai') { renderAIPressure(content); }
-      else { renderMacroGlobal(content); }
-    }
-    else if (id === 'scoring') { renderScoring(content); }
-    else { renderEmpty(content, mod); }
     applyRange();
     // 渲染完成后 resize
     setTimeout(function () {
@@ -2659,7 +2670,12 @@
   // 初始路由：支持 #valuation/申万一级行业 直达
   // 等待数据加载完成（支持外挂JSON和内嵌数据两种模式）
   function boot() {
-    D = window.DASH;  // 外挂模式：此时数据已 fetch 完成
+    D = window.DASH || {};  // 外挂模式：此时数据已 fetch 完成
+    // 补全缺失模块，避免因单个模块加载失败导致渲染崩溃
+    ['meta', 'valuation', 'earnings', 'sentiment', 'macro_cn', 'liquidity',
+     'macro_global', 'scoring', 'hf_macro', 'ai_pressure'].forEach(function (k) {
+      if (!D[k]) D[k] = {};
+    });
     var h = (location.hash || '').replace('#', '');
     if (h) {
       var parts = h.split('/');
