@@ -1345,6 +1345,7 @@
       var y10Last = null;
       for (var i = D.sentiment.dividend.y10.length - 1; i >= 0; i--) { if (D.sentiment.dividend.y10[i] != null) { y10Last = D.sentiment.dividend.y10[i]; break; } }
       var spread = divLast - y10Last;
+      var spreadBase = (D.sentiment.dividend && D.sentiment.dividend.stat) || null;
       sb.innerHTML =
         '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
         + '<tr><td style="padding:6px;border-bottom:1px solid var(--border);"><b>高估值 vs 低估值</b></td><td style="padding:6px;border-bottom:1px solid var(--border);">'
@@ -1360,8 +1361,25 @@
         + (top5Last != null && top5Last > 50 ? '<span style="color:var(--red);">资金集中大盘</span>' : '<span style="color:var(--green);">资金扩散小盘</span>')
         + '<span style="color:var(--text-faint);">（前5%成交占比 ' + num1(top5Last) + '%；>50%=集中，<45%=扩散，45→35%=小盘超额窗口）</span></td></tr>'
         + '<tr><td style="padding:6px;"><b>红利 vs 债券</b></td><td style="padding:6px;">'
-        + (spread != null && !isNaN(spread) && spread > 2 ? '<span style="color:var(--red);">红利性价比高</span>' : (spread != null && !isNaN(spread) && spread < 1.5 ? '<span>性价比一般</span>' : '<span>中性</span>'))
-        + '<span style="color:var(--text-faint);">（股息率 ' + num1(divLast) + '% − 10Y国债 ' + num1(y10Last) + '% = 利差 ' + num1(spread) + '%）</span></td></tr>'
+        + (function () {
+          if (spread == null || isNaN(spread)) return '<span>—</span>';
+          var sb = spreadBase;
+          var hasBase = sb && sb.avg5 != null;
+          var above5 = hasBase && spread >= sb.avg5;
+          var head = (above5 && spread > 2) ? '<span style="color:var(--red);">红利性价比高</span>'
+                   : (spread > 2 ? '<span style="color:#d97706;">性价比中性偏高</span>' : '<span>性价比一般</span>');
+          var dropped = sb && sb.jun != null && spread < sb.jun - 0.1;
+          return head + '<span style="color:var(--text-faint);">（'
+            + (dropped ? '较6月底回落 ' + num1(sb.jun - spread) + 'pp，' : '')
+            + (hasBase ? (above5 ? '高于' : '低于') + '近5年均值 ' + num1(Math.abs(spread - sb.avg5)) + 'pp' : '')
+            + '）</span>';
+        }())
+        + '<span style="color:var(--text-faint);">（股息率 ' + num1(divLast) + '% − 10Y国债 ' + num1(y10Last) + '%'
+        + ' = 利差 ' + num1(spread) + 'pp；'
+        + (spreadBase ? '较 6月底 ' + num1(spreadBase.jun) + 'pp 回落 ' + num1(Math.abs(spread - spreadBase.jun)) + 'pp，'
+          + '近5年均值 ' + num1(spreadBase.avg5) + 'pp（当前' + (spread >= spreadBase.avg5 ? '高于' : '低于') + '均值 '
+          + num1(Math.abs(spread - spreadBase.avg5)) + 'pp，近5年 ' + num1(spreadBase.pct) + '% 分位）' : '')
+        + '）</span></td></tr>'
         + '</table>';
       container.appendChild(styleCard0);
       registerCard(styleCard0, null, '风格判断 总结 高估值 低估值 成长 价值 TMT 红利 大盘 小盘 谁占优');
@@ -2571,7 +2589,7 @@
       container.appendChild(cdsCard);
       var cdsChart = echarts.init(cdsCard.querySelector('.card-body'));
       var cdsOpt = baseLineOption('bp');
-      cdsOpt.series = cdsNames.filter(function (h) { return h && h !== cds_header[0]; }).map(function (h) {
+      cdsOpt.series = cdsNames.filter(function (h) { return h && h !== cdsNames[0]; }).map(function (h) {
         var v = cds.data[h];
         return { name: h, type: 'line', showSymbol: false, lineStyle: { width: 1.3 },
           emphasis: { focus: 'series' }, data: pairDates(cds.dates, v) };
@@ -2590,7 +2608,7 @@
       container.appendChild(oasCard);
       var oasChart = echarts.init(oasCard.querySelector('.card-body'));
       var oasOpt = baseLineOption('bp');
-      oasOpt.series = oas.header.filter(function (h) { return h && h !== oas_header[0]; }).map(function (h) {
+      oasOpt.series = oas.header.filter(function (h) { return h && h !== oas.header[0]; }).map(function (h) {
         return { name: h, type: 'line', showSymbol: false, lineStyle: { width: 1.3 },
           emphasis: { focus: 'series' }, data: pairDates(oas.dates, oas.data[h]) };
       });
@@ -2613,7 +2631,7 @@
       container.appendChild(tokCard);
       var tokChart = echarts.init(tokCard.querySelector('.card-body'));
       var tokOpt = baseLineOption('');
-      tokOpt.series = tok.header.filter(function (h) { return h && h !== tok_header[0]; }).map(function (h) {
+      tokOpt.series = tok.header.filter(function (h) { return h && h !== tok.header[0]; }).map(function (h) {
         return { name: h, type: 'line', showSymbol: false, lineStyle: { width: 1.5 },
           emphasis: { focus: 'series' }, data: pairDates(tok.dates, tok.data[h]) };
       });
@@ -2631,7 +2649,7 @@
       container.appendChild(gpuCard);
       var gpuChart = echarts.init(gpuCard.querySelector('.card-body'));
       var gpuOpt = baseLineOption('$');
-      gpuOpt.series = gpu.header.filter(function (h) { return h && h !== g_header[0]; }).map(function (h) {
+      gpuOpt.series = gpu.header.filter(function (h) { return h && h !== gpu.header[0]; }).map(function (h) {
         return { name: h, type: 'line', showSymbol: false, lineStyle: { width: 1.5 },
           emphasis: { focus: 'series' }, data: pairDates(gpu.dates, gpu.data[h]) };
       });
