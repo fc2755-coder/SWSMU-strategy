@@ -2407,8 +2407,8 @@
     renderToolbar(container);
     var HF = D.hf_macro;
 
-    // 高频摘要卡（宏观 PPT 0913 的核心读数）
-    var hfCard = makeCard('高频景气摘要（20260913）', '', '2026-09-13', true, null, '高频摘要');
+    // 高频摘要卡（20260920 底稿核心读数）
+    var hfCard = makeCard('高频景气摘要（20260920）', '', '2026-09-18', true, null, '高频摘要');
     var hb = hfCard.querySelector('.card-body');
     hb.style.height = 'auto';
     hb.style.padding = '6px 16px 14px';
@@ -2416,29 +2416,40 @@
     hb.style.lineHeight = '1.9';
     hb.style.color = 'var(--text-sub)';
     hb.innerHTML =
-      '<b style="color:var(--text-main);">综合指数（截至09/11）</b>：景气环比下降，同比增速下降。'
-      + '绝对强度：出口 > 服务消费 > 商品消费 > 地产成交 > 制造生产 > 建筑施工。<br>'
-      + '<b style="color:var(--text-main);">行业读数</b>：<br>'
-      + '· <b>出口</b>：上海港半月度出口同比 +22.2%，韩国出口再度复苏，提价或占主导<br>'
-      + '· <b>文旅消费</b>：酒店入住率同比 +5.6%，航班客流同比 +2.8%，票价同比 +3.1%（淡季不弱）<br>'
-      + '· <b>商品消费</b>：乘用车销量同比 -19.0%（9月前6日），空调线上 -24.2%，整体偏弱震荡<br>'
-      + '· <b>地产</b>：12城二手房成交同比 +5.2%，一线二手带看回暖；新房30城 -5.9%，一线 +25.2%<br>'
-      + '· <b>建筑</b>：基建水泥直供量同比 -3.8%（持续回暖），螺纹表需同比 -10.7%（改善）<br>'
-      + '· <b>制造</b>：高炉开工 83.1%（同比-0.8%），半钢胎 65.5%（同比-10.8%），旺季成色不足<br>'
-      + '· <b>就业</b>：招聘需求低位，K型分化延续<br>'
-      + '<b style="color:var(--text-main);">小结</b>：油价压制生产，地产线级分化。金九进入第二周但生产旺季成色不足。';
+      '<b style="color:var(--text-main);">核心读数（截至 09/18 当周）</b><br>'
+      + '<b>行业读数</b>：<br>'
+      + '· <b>出口</b>：SCFI 综合指数 3687.8（环比 +0.7%，同比 +155%），运价维持历史高位区<br>'
+      + '· <b>制造</b>：高炉开工率 82.3%（同比 -1.8%），日均铁水 237.6 万吨；沿海八省日耗 217.9 万吨（9/17）<br>'
+      + '· <b>商品消费</b>：乘用车 9 月前两周零售同比 -23.0%（8 月 -19.0%），整体偏弱；空调周销售额同比约 -20%<br>'
+      + '· <b>文旅消费</b>：当日电影票房 3846 万元（9/18）<br>'
+      + '· <b>地产</b>：二手房日度成交北京 354 / 深圳 312（9/17），一线成交活跃<br>'
+      + '· <b>就业</b>：零工工价全国 24.0 元/小时（同比 -10.8%），用工量指数同比 +0.4%，K 型分化延续<br>'
+      + '<b style="color:var(--text-main);">小结</b>：出口运价一枝独秀，生产平稳、消费偏弱，就业工资端仍承压。';
     container.appendChild(hfCard);
-    registerCard(hfCard, null, '高频 景气 出口 消费 地产 建筑 制造 就业');
+    registerCard(hfCard, null, '高频 景气 出口 消费 地产 制造 就业');
 
     var h1 = document.createElement('div');
     h1.className = 'section-title';
     h1.textContent = '高频时序指标';
     container.appendChild(h1);
 
-    // SCFI 出口运价
-    if (HF.hf && HF.hf['出口-SCFI']) {
-      var scfi = HF.hf['出口-SCFI'];
-      mcLine(container, 'SCFI 上海出口集装箱运价指数', [], '', '指数', '领先出口1-2个月。最新 ' + (scfi.values[scfi.values.length-1] || '-'), 'HF_SCFI');
+    // SCFI 出口运价（用修正后的综合指数序列，850周）
+    if (HF.scfi_summary) {
+      var scfiS = HF.scfi_summary;
+      var scfiCard = makeCard('SCFI 上海出口集装箱运价指数', '指数', scfiS.dates[scfiS.dates.length - 1], true,
+        '领先出口1-2个月。最新 ' + num1(scfiS.values[scfiS.values.length - 1])
+        + '（环比 ' + num1(scfiS.wow) + '%，同比 ' + num1(scfiS.yoy) + '%）。'
+        + '运价维持历史高位区=出口链条景气延续。', 'HF_SCFI');
+      container.appendChild(scfiCard);
+      var scfiChart = echarts.init(scfiCard.querySelector('.card-body'));
+      var scfiOpt = baseLineOption('指数');
+      scfiOpt.series = [{ name: 'SCFI综合指数', type: 'line', showSymbol: false,
+        lineStyle: { width: 1.5, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
+        emphasis: { focus: 'series' }, data: pairDates(scfiS.dates, scfiS.values) }];
+      scfiChart.setOption(scfiOpt);
+      charts.push(scfiChart);
+      addZoomHover(scfiCard, scfiChart);
+      registerCard(scfiCard, scfiChart, 'SCFI 出口运价 集装箱');
     }
 
     // 高频指标趋势图（从景气跟踪底稿逐指标提取的时序）
@@ -2474,7 +2485,7 @@
     });
 
     // 高频表格：全部指标最新读数
-    var tableCard = makeCard('高频指标一览表', '', '2026-09-13', true, null, '高频表');
+    var tableCard = makeCard('高频指标一览表', '', '2026-09-18', true, null, '高频表');
     var tb = tableCard.querySelector('.card-body');
     tb.style.height = 'auto';
     tb.style.padding = '6px 16px 14px';
@@ -2484,22 +2495,16 @@
       + '<th style="padding:4px 8px;border:1px solid var(--border);background:#f6f8fc;">最新读数</th>'
       + '<th style="padding:4px 8px;border:1px solid var(--border);background:#f6f8fc;">方向</th></tr>';
     var hfData = [
-      ['出口', '上海港出口同比(半月)', '+22.2%', '<span style="color:var(--red);">↑ 回暖</span>'],
-      ['出口', '韩国出口同比(周)', '逼近年内高点', '<span style="color:var(--red);">↑ 复苏</span>'],
-      ['消费', '酒店入住率同比', '+5.6%', '<span style="color:var(--red);">↑ 淡季不弱</span>'],
-      ['消费', '乘用车销量同比(9月前6日)', '-19.0%', '<span style="color:var(--green);">↓ 偏弱</span>'],
-      ['消费', '空调线上销售额同比', '-24.2%', '<span style="color:var(--green);">↓ 回落</span>'],
-      ['消费', '电影票房同比(MA7)', '+5.0%', '<span style="color:var(--red);">↑ 改善</span>'],
-      ['地产', '12城二手房成交同比', '+5.2%', '<span style="color:var(--red);">↑ 一线回暖</span>'],
-      ['地产', '30城新房成交面积同比', '-5.9%', '<span style="color:var(--green);">↓ 一线+25.2%</span>'],
-      ['地产', '一线带看指数环比', '北+12%/上+4%/广+2%/深+5%', '<span style="color:var(--red);">↑ 积极</span>'],
-      ['建筑', '基建水泥直供量同比', '-3.8%', '<span style="color:var(--red);">↑ 持续回暖</span>'],
-      ['建筑', '螺纹表需同比', '-10.7%', '<span style="color:var(--red);">↑ 改善</span>'],
-      ['制造', '高炉开工率', '83.1% (同比-0.8%)', '→ 平稳'],
-      ['制造', '半钢胎开工率', '65.5% (同比-10.8%)', '<span style="color:var(--green);">↓ 偏弱</span>'],
-      ['制造', '江浙织机开工率', '52.2% (同比-16.3%)', '<span style="color:var(--green);">↓ 低位</span>'],
-      ['制造', '沿海八省耗煤同比', '-13.6%', '<span style="color:var(--green);">↓ 旺季不足</span>'],
-      ['就业', '沿海地区零工工价同比', '-7.9%', '<span style="color:var(--green);">↓ K型延续</span>'],
+      ['出口', 'SCFI综合指数(周·9/18)', '3687.8 (环比+0.7%)', '<span style="color:var(--red);">↑ 同比+155%</span>'],
+      ['制造', '高炉开工率(247家·9/18)', '82.3% (同比-1.8%)', '→ 平稳'],
+      ['制造', '日均铁水产量(9/18)', '237.6 万吨', '→ 平稳'],
+      ['制造', '沿海八省电厂日耗(9/17)', '217.9 万吨', '→ 旺季高位'],
+      ['消费', '乘用车零售同比(9月至9/13)', '-23.0% (8月-19.0%)', '<span style="color:var(--green);">↓ 偏弱</span>'],
+      ['消费', '空调周销售额同比(9/13周)', '约 -20%', '<span style="color:var(--green);">↓ 回落</span>'],
+      ['消费', '当日电影票房(9/18)', '3846 万元', '→ 中性'],
+      ['地产', '二手房日度成交 北京/深圳(9/17)', '354 / 312', '→ 一线活跃'],
+      ['就业', '零工工价同比 全国(9/17)', '-10.8%', '<span style="color:var(--green);">↓ K型延续</span>'],
+      ['就业', '用工量指数同比 全国(9/17)', '+0.4%', '→ 低位企稳'],
     ];
     hfData.forEach(function (r) {
       tableHtml += '<tr><td style="padding:4px 8px;border:1px solid var(--border);font-weight:600;">' + r[0] + '</td>'
@@ -2620,25 +2625,66 @@
 
     var h3 = document.createElement('div');
     h3.className = 'section-title';
-    h3.textContent = 'AI景气度（Token / GPU / ARR / Capex）';
+    h3.textContent = 'AI景气度（OpenRouter 调用量 / GPU / ARR / Capex）';
     container.appendChild(h3);
 
-    // Token
-    var tok = AP.token;
-    if (tok && tok.dates && tok.dates.length) {
-      var tokCard = makeCard('Token 支出指数', '', tok.dates[tok.dates.length - 1], true,
-        '来源 AI指数材料底稿。Token调用量反映AI应用景气度。', 'AI_Token');
-      container.appendChild(tokCard);
-      var tokChart = echarts.init(tokCard.querySelector('.card-body'));
-      var tokOpt = baseLineOption('');
-      tokOpt.series = tok.header.filter(function (h) { return h && h !== tok.header[0]; }).map(function (h) {
-        return { name: h, type: 'line', showSymbol: false, lineStyle: { width: 1.5 },
-          emphasis: { focus: 'series' }, data: pairDates(tok.dates, tok.data[h]) };
-      });
-      tokChart.setOption(tokOpt);
-      charts.push(tokChart);
-      addZoomHover(tokCard, tokChart);
-      registerCard(tokCard, tokChart, 'Token 指数 AI景气');
+    // OpenRouter 周度调用量（柱）+ 环比（右轴线），替换原 Token 支出指数
+    var or_ = AP.openrouter;
+    if (or_ && or_.weeks && or_.weeks.length) {
+      var orMom = (or_.mom || []).map(function (v) { return v == null ? null : +(v * 100).toFixed(2); });
+      var orLast = or_.calls[or_.calls.length - 1];
+      var orMomLast = orMom.length ? orMom[orMom.length - 1] : null;
+      var top3 = (or_.models || []).slice(0, 3).map(function (m) {
+        return m.name + ' ' + (m.share * 100).toFixed(1) + '%';
+      }).join('、');
+      var orCard = makeCard('OpenRouter 周度 Token 调用量（万亿/周）', '万亿/周', or_.weeks[or_.weeks.length - 1], true,
+        'OpenRouter 平台大模型 token 消耗（周度）。最新 ' + num1(orLast) + ' 万亿/周'
+        + '（环比 ' + (orMomLast == null ? '-' : (orMomLast >= 0 ? '+' : '') + num1(orMomLast) + '%）')
+        + '。2026 年调用量加速上台阶：2 月破 14 万亿、6 月破 44 万亿、8 月单周破 110 万亿。'
+        + '模型结构：前九大占 62.0%，Top3 ' + top3 + '。'
+        + '调用量环比持续为正=AI 应用景气扩张。', 'AI_Token');
+      container.appendChild(orCard);
+      var orChart = echarts.init(orCard.querySelector('.card-body'));
+      var orOpt = {
+        grid: { left: 56, right: 56, top: 40, bottom: 58 },
+        legend: { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { fontSize: 11, color: '#4b5563' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' },
+          backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+          textStyle: { color: '#1f2430', fontSize: 12 },
+          formatter: function (ps) {
+            var s = ps[0].name;
+            ps.forEach(function (p) {
+              var v = p.value;
+              if (v == null) return;
+              s += '<br>' + p.marker + p.seriesName + ': ' + (p.seriesName.indexOf('环比') >= 0 ? num2(v) + '%' : num2(v));
+            });
+            return s;
+          } },
+        xAxis: { type: 'category', data: or_.weeks,
+          axisLabel: { color: '#6b7280', fontSize: 10, rotate: 45 },
+          axisLine: { lineStyle: { color: '#d5dae3' } } },
+        yAxis: [
+          { type: 'value', name: '万亿/周', scale: true,
+            axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef1f6' } } },
+          { type: 'value', name: '环比%', position: 'right', scale: true,
+            axisLabel: { color: '#94a3b8', fontSize: 10, formatter: function (v) { return v + '%'; } },
+            splitLine: { show: false },
+            axisLine: { show: false } }
+        ],
+        series: [
+          { name: '周度调用量', type: 'bar', barMaxWidth: 14,
+            data: or_.calls, itemStyle: { color: '#2563eb', borderRadius: [2, 2, 0, 0] } },
+          { name: '环比（右轴）', type: 'line', yAxisIndex: 1, showSymbol: false,
+            lineStyle: { width: 1.6, color: '#d97706' }, itemStyle: { color: '#d97706' },
+            emphasis: { focus: 'series' }, data: orMom,
+            markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c3c9d4', width: 1, type: 'dashed' },
+              data: [{ yAxis: 0, label: { show: false } }] } }
+        ]
+      };
+      orChart.setOption(orOpt);
+      charts.push(orChart);
+      addZoomHover(orCard, orChart);
+      registerCard(orCard, orChart, 'OpenRouter Token 调用量 AI景气 环比');
     }
 
     // GPU租赁价格
@@ -2664,23 +2710,98 @@
     h4.textContent = 'AI Capex 与 ARR';
     container.appendChild(h4);
 
-    // ARR/Capex 静态卡
-    var arrCard = makeCard('ARR 与 Capex 预期', '$B', '2026', true, null, 'AI_ARR');
-    var ab = arrCard.querySelector('.card-body');
-    ab.style.height = 'auto';
-    ab.style.padding = '6px 16px 14px';
-    ab.style.fontSize = '12.5px';
-    ab.style.lineHeight = '1.9';
-    ab.style.color = 'var(--text-sub)';
-    ab.innerHTML =
-      '<b style="color:var(--text-main);">超大规模厂商 2026E Capex 合计 $790B</b><br>'
-      + '各公司财报指引汇总。Capex 超预期=AI基建扩张，对长债形成挤出效应。<br><br>'
-      + '<b style="color:var(--text-main);">ARR（Annual Recurring Revenue）</b><br>'
-      + 'OpenAI ARR $45B（2026E），Anthropic ARR $73B（2026E）。'
-      + 'ARR 覆盖率（ARR/Capex）是判断AI基建回报可持续性的核心指标。'
-      + 'ARR增速放缓→Capex回报率下降→AI压力指数上升。';
-    container.appendChild(arrCard);
-    registerCard(arrCard, null, 'ARR Capex AI 基建 790B 45B 73B');
+    // ARR 月度图（OpenAI / Anthropic 分组柱 + tooltip MoM）
+    var arrD = AP.arr;
+    if (arrD && arrD.months && arrD.months.length) {
+      var arrLastO = arrD.openai[arrD.openai.length - 1];
+      var arrLastA = arrD.anthropic[arrD.anthropic.length - 1];
+      var arrCard = makeCard('OpenAI / Anthropic 月度 ARR（亿美元）', '亿美元', '26/08E', true,
+        'ARR（Annual Recurring Revenue，年化经常性收入）。最新（26/08E）：OpenAI $' + num1(arrLastO / 10) + 'B、'
+        + 'Anthropic $' + num1(arrLastA / 10) + 'B，Anthropic 已反超 OpenAI。'
+        + 'ARR 覆盖率（ARR/Capex）是判断 AI 基建回报可持续性的核心指标：'
+        + 'ARR 增速放缓→Capex 回报率下降→AI 压力指数上升。', 'AI_ARR');
+      container.appendChild(arrCard);
+      var arrChart = echarts.init(arrCard.querySelector('.card-body'));
+      var arrOpt = {
+        grid: { left: 52, right: 20, top: 40, bottom: 56 },
+        legend: { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { fontSize: 11, color: '#4b5563' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+          textStyle: { color: '#1f2430', fontSize: 12 },
+          formatter: function (ps) {
+            var i = ps[0].dataIndex;
+            var s = ps[0].name;
+            if (arrD.openai[i] != null) s += '<br>OpenAI: ' + num1(arrD.openai[i]) + ' 亿美元'
+              + (arrD.openai_mom[i] != null ? '（MoM ' + (arrD.openai_mom[i] >= 0 ? '+' : '') + num1(arrD.openai_mom[i] * 100) + '%）' : '');
+            if (arrD.anthropic[i] != null) s += '<br>Anthropic: ' + num1(arrD.anthropic[i]) + ' 亿美元'
+              + (arrD.anthropic_mom[i] != null ? '（MoM ' + (arrD.anthropic_mom[i] >= 0 ? '+' : '') + num1(arrD.anthropic_mom[i] * 100) + '%）' : '');
+            return s;
+          } },
+        xAxis: { type: 'category', data: arrD.months,
+          axisLabel: { color: '#6b7280', fontSize: 10, rotate: 45 },
+          axisLine: { lineStyle: { color: '#d5dae3' } } },
+        yAxis: { type: 'value', name: '亿美元',
+          axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef1f6' } } },
+        series: [
+          { name: 'OpenAI', type: 'bar', barMaxWidth: 16,
+            data: arrD.openai, itemStyle: { color: '#2563eb', borderRadius: [2, 2, 0, 0] } },
+          { name: 'Anthropic', type: 'bar', barMaxWidth: 16,
+            data: arrD.anthropic, itemStyle: { color: '#d97706', borderRadius: [2, 2, 0, 0] } }
+        ]
+      };
+      arrChart.setOption(arrOpt);
+      charts.push(arrChart);
+      addZoomHover(arrCard, arrChart);
+      registerCard(arrCard, arrChart, 'ARR OpenAI Anthropic 月度收入');
+    }
+
+    // Capex 图（四大厂商分组柱 + 合计折线）
+    var capD = AP.capex;
+    if (capD && capD.years && capD.years.length) {
+      var capColors = { '谷歌': '#2563eb', '亚马逊': '#d97706', '微软': '#16a34a', 'Meta': '#7c3aed' };
+      var capCard = makeCard('超大规模厂商 Capex（亿美元 · 日历年口径）', '亿美元', capD.adj_date || '2026', true,
+        '四大厂商资本开支预测（日历年口径）。2026E 合计 $' + num1(capD.total[2] / 10) + 'B'
+        + '（yoy +' + num1(capD.total_yoy[0] * 100) + '%），2027E $' + num1(capD.total[3] / 10) + 'B'
+        + '（+' + num1(capD.total_yoy[1] * 100) + '%）。'
+        + 'Capex 超预期=AI 基建扩张，对长债形成挤出效应（约 1/8~1/4 久期挤出）。', 'AI_CAPEX');
+      container.appendChild(capCard);
+      var capChart = echarts.init(capCard.querySelector('.card-body'));
+      var capOpt = {
+        grid: { left: 56, right: 20, top: 40, bottom: 40 },
+        legend: { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { fontSize: 11, color: '#4b5563' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+          textStyle: { color: '#1f2430', fontSize: 12 },
+          formatter: function (ps) {
+            var i = ps[0].dataIndex;
+            var s = capD.years[i];
+            ps.forEach(function (p) {
+              if (p.value != null) s += '<br>' + p.marker + p.seriesName + ': ' + num1(p.value) + ' 亿美元';
+            });
+            if (capD.total_yoy[i] != null && i >= 1) s += '<br>合计 yoy: ' + (capD.total_yoy[i - 1] >= 0 ? '+' : '') + num1(capD.total_yoy[i - 1] * 100) + '%';
+            return s;
+          } },
+        xAxis: { type: 'category', data: capD.years,
+          axisLabel: { color: '#6b7280', fontSize: 11 },
+          axisLine: { lineStyle: { color: '#d5dae3' } } },
+        yAxis: { type: 'value', name: '亿美元',
+          axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef1f6' } } },
+        series: capD.companies.map(function (c) {
+          return { name: c.name, type: 'bar', barMaxWidth: 18,
+            data: c.values, itemStyle: { color: capColors[c.name] || '#64748b', borderRadius: [2, 2, 0, 0] } };
+        }).concat([
+          { name: '合计（右轴同刻度）', type: 'line', showSymbol: true, symbolSize: 5,
+            lineStyle: { width: 2, color: '#334155' }, itemStyle: { color: '#334155' },
+            emphasis: { focus: 'series' }, data: capD.total,
+            label: { show: true, fontSize: 10, color: '#334155', position: 'top',
+              formatter: function (p) { return p.value >= 1000 ? (p.value / 1000).toFixed(1) + 'k' : p.value; } } }
+        ])
+      };
+      capChart.setOption(capOpt);
+      charts.push(capChart);
+      addZoomHover(capCard, capChart);
+      registerCard(capCard, capChart, 'Capex 谷歌 亚马逊 微软 Meta 资本开支 790B');
+    }
   }
 
   /* ---------------- 空模块 ---------------- */
