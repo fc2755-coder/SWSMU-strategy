@@ -11,6 +11,7 @@
 
   var MODULES = [
     { id: 'overview',  name: '总览', icon: '览', dataKey: 'overview' },
+    { id: 'weekly',    name: '每周行情', icon: '周', dataKey: 'weekly_market' },
     { id: 'valuation', name: '估值情况', icon: '估', dataKey: 'valuation',
       children: [
         { name: '风格指数', section: '风格指数' },
@@ -533,6 +534,71 @@
     note.innerHTML = '说明：估值为月度序列（PE/PB截至2026-09，ROE截至2026Q2），盈利为个股一致预期汇总（26H1=2026上半年实际，26E/27E=分析师一致预期，截至2026-09-15），公募超配=主动偏股基金重仓行业配置−全市场流通权重（2026Q2，仅行业口径）。'
       + '分位为近十年月度分位。二阶导=27E增速−26E增速，>0 表示盈利预期仍在加速。点击表头排序。';
     container.appendChild(note);
+  }
+
+  /* ---------------- 每周行情（周报四图） ---------------- */
+  function renderWeekly(container) {
+    var WK = D.weekly_market;
+    if (!WK || !WK.charts || !WK.charts.length) {
+      container.innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280;">每周行情数据未加载</div>';
+      return;
+    }
+    var grid = document.createElement('div');
+    grid.className = 'grid';
+    container.appendChild(grid);
+
+    var POS = '#2c4a7c', NEG = '#e8834a';   // 正=深蓝、负=橙红（对齐周报原图）
+
+    WK.charts.forEach(function (c) {
+      var rows = c.rows.slice();
+      var names = rows.map(function (r) { return r.name; }).reverse();
+      var vals = rows.map(function (r) { return r.v; }).reverse();
+      var posN = rows.filter(function (r) { return r.v >= 0; }).length;
+      var title = c.title.replace(/（周，%）/, '');
+      var card = makeCard(title + '（周涨跌幅）', '%', WK.asof, true,
+        '区间 ' + (c.period || WK.asof) + '：共 ' + rows.length + ' 项，上涨 ' + posN
+        + ' 项、下跌 ' + (rows.length - posN) + ' 项。'
+        + '领涨 ' + rows[0].name + ' ' + rows[0].v.toFixed(2) + '%，'
+        + '领跌 ' + rows[rows.length - 1].name + ' ' + rows[rows.length - 1].v.toFixed(2) + '%。'
+        + '（深色=上涨，橙色=下跌）', 'WK_' + c.id);
+      grid.appendChild(card);
+      var body = card.querySelector('.card-body');
+      body.style.height = Math.max(300, rows.length * 21 + 50) + 'px';
+      var chart = echarts.init(body);
+      chart.setOption({
+        grid: { left: 136, right: 74, top: 14, bottom: 26 },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+          textStyle: { color: '#1f2430', fontSize: 12 },
+          formatter: function (ps) {
+            var i = names.length - 1 - ps[0].dataIndex;
+            return rows[i].name + '：' + (rows[i].v >= 0 ? '+' : '') + rows[i].v.toFixed(2) + '%';
+          } },
+        xAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 10, formatter: '{value}%' },
+          axisLine: { show: false }, axisTick: { show: false },
+          splitLine: { lineStyle: { color: '#eef1f6' } } },
+        yAxis: { type: 'category', data: names, axisTick: { show: false },
+          axisLabel: { color: '#374151', fontSize: 11 },
+          axisLine: { lineStyle: { color: '#d5dae3' } } },
+        series: [{
+          type: 'bar', barMaxWidth: 13,
+          data: vals.map(function (v) {
+            return { value: v, itemStyle: { color: v >= 0 ? POS : NEG, borderRadius: [0, 2, 2, 0] } };
+          }),
+          label: { show: true, fontSize: 10.5, color: '#4b5563',
+            formatter: function (p) { return p.value.toFixed(1); } },
+          labelLayout: function (params) {
+            return { x: params.rect.x + (params.rect.width >= 0 ? params.rect.width + 4 : -4),
+                     align: params.rect.width >= 0 ? 'left' : 'right' };
+          },
+          markLine: { silent: true, symbol: 'none', lineStyle: { color: '#9ca3af', width: 1 },
+            data: [{ xAxis: 0, label: { show: false } }] }
+        }]
+      });
+      charts.push(chart);
+      addZoomHover(card, chart);
+      registerCard(card, chart, title + ' 周涨跌幅 ' + rows.map(function (r) { return r.name; }).join(' '));
+    });
   }
 
   /* ---------------- 估值 ---------------- */
@@ -2639,6 +2705,7 @@
     content.innerHTML = '';
     try {
       if (id === 'overview') { renderOverview(content); }
+      else if (id === 'weekly') { renderWeekly(content); }
       else if (id === 'valuation') { renderToolbar(content); renderValuation(content, section); }
       else if (id === 'earnings') { renderToolbar(content); renderEarnings(content, section); }
       else if (id === 'sentiment') { renderToolbar(content); renderSentiment(content, section); }
