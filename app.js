@@ -2357,6 +2357,38 @@
       mcLine(container, 'SCFI 上海出口集装箱运价指数', [], '', '指数', '领先出口1-2个月。最新 ' + (scfi.values[scfi.values.length-1] || '-'), 'HF_SCFI');
     }
 
+    // 高频指标趋势图（从景气跟踪底稿逐指标提取的时序）
+    var HFC = D.hf_charts || [];
+    HFC.forEach(function (c) {
+      var lastOf = function (s) {
+        for (var i = s.values.length - 1; i >= 0; i--) if (s.values[i] != null) return s.values[i];
+        return null;
+      };
+      var desc = c.series.map(function (s) {
+        var v = lastOf(s);
+        return s.name + ' ' + (v == null ? '-' : (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)));
+      }).join('；');
+      var card = makeCard(c.title, c.unit, c.dates[c.dates.length - 1], false,
+        c.title.replace(/（.*?）/g, '') + '的时间序列。最新：' + desc + '。'
+        + '便于观察绝对水平与季节性（同比口径需对照去年同期）。', 'HF_' + c.id);
+      container.appendChild(card);
+      var chart = echarts.init(card.querySelector('.card-body'));
+      var opt = baseLineOption(c.unit);
+      opt.grid.right = 24;
+      opt.legend = { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3,
+        textStyle: { fontSize: 11, color: '#4b5563' } };
+      opt.series = c.series.map(function (s) {
+        return { name: s.name, type: 'line', showSymbol: false,
+          lineStyle: { width: 1.4, color: s.color }, itemStyle: { color: s.color },
+          emphasis: { focus: 'series' },
+          data: pairDates(c.dates, s.values), connectNulls: true };
+      });
+      chart.setOption(opt);
+      charts.push(chart);
+      addZoomHover(card, chart);
+      registerCard(card, chart, c.title + ' ' + c.series.map(function (s) { return s.name; }).join(' '));
+    });
+
     // 高频表格：全部指标最新读数
     var tableCard = makeCard('高频指标一览表', '', '2026-09-13', true, null, '高频表');
     var tb = tableCard.querySelector('.card-body');
