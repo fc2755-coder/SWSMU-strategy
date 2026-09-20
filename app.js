@@ -2535,7 +2535,7 @@
       var aiCard = makeCard('AI金融压力指数（AFSI）', '', ai.dates[ai.dates.length - 1], true,
         '自建AI金融压力指数（覆盖信贷/市场/AI活跃度/硬件四维13指标，每周更新）。'
         + '最新读数 ' + (ai.index[ai.index.length - 1] || 0).toFixed(1) + '。'
-        + '信号含义：>70 警戒（控制仓位），>80 危险，50 中性。来源：自建模型。', 'AFSI综合');
+        + '信号含义：>70 警戒（控制仓位），>80 危险，50 中性。自建模型逐周更新。', 'AFSI综合');
       container.appendChild(aiCard);
       var aiChart = echarts.init(aiCard.querySelector('.card-body'));
       var aiOpt = baseLineOption('');
