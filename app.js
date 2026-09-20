@@ -15,9 +15,7 @@
       children: [
         { name: '风格指数', section: '风格指数' },
         { name: 'A股整体', section: 'A股整体' },
-        { name: '申万一级行业', section: '申万一级行业' },
-        { name: '远期估值', section: '远期估值' },
-        { name: '重要指数', section: '重要指数' }
+        { name: '申万一级行业', section: '申万一级行业' }
       ] },
     { id: 'earnings', name: '盈利情况', icon: '盈', dataKey: 'earnings',
       children: [
@@ -644,7 +642,8 @@
     rows.sort(function (a, b) { return b.pe - a.pe; });
     var cap = 46;
     if (rows.length > cap) rows = rows.slice(0, cap).concat(rows.slice(-6));
-    var card = makeCard('远期PE（价格不变假设）', '倍', '2026-09', true,
+    var CAT_NAME = { '风格': '风格指数', 'A股': 'A股整体', '一级行业': '申万一级行业', '二级行业': '申万二级行业' };
+    var card = makeCard('远期PE · ' + (CAT_NAME[cat] || cat) + '（价格不变假设）', '倍', '2026-09', true,
       'PE-26E = 当前PE-TTM ÷ (1+26E盈利增速)；PE-27E 再除以 (1+27E增速)。'
       + '假设价格不变、盈利兑现一致预期，估值被动消化到什么水平。仅作静态推演，不构成盈利/目标价预测。', '远期PE' + cat);
     container.appendChild(card);
@@ -689,6 +688,7 @@
         pb.series.filter(function (s) { return s.cat === '风格'; }), false, null, 'PB风格');
       percentileBar(grid, 'pe', '风格', 'PE-TTM 近10年分位 · 风格');
       percentileBar(grid, 'pb', '风格', 'PB-LF 近10年分位 · 风格');
+      forwardPE(grid, '风格');
     }
     if (!section || section === 'A股整体') {
       var h2 = document.createElement('div'); h2.className = 'section-title'; h2.textContent = 'A股整体';
@@ -702,6 +702,7 @@
         roe.series.filter(function (s) { return s.cat === 'A股'; }).map(function (s) {
           return { name: s.name, values: s.values.map(function (v) { return v != null ? v * 100 : null; }) };
         }), false, null, 'ROE A股');
+      forwardPE(grid, 'A股');
     }
     if (!section || section === '申万一级行业') {
       var h3 = document.createElement('div'); h3.className = 'section-title'; h3.textContent = '申万一级行业（31个）';
@@ -710,34 +711,7 @@
       industryPicker(grid, 'pb', '一级行业', '单行业 PB-LF 走势', '倍');
       percentileBar(grid, 'pe', '一级行业', 'PE-TTM 近10年分位 · 一级行业');
       percentileBar(grid, 'pb', '一级行业', 'PB-LF 近10年分位 · 一级行业');
-    }
-    if (!section || section === '远期估值') {
-      var h4 = document.createElement('div'); h4.className = 'section-title'; h4.textContent = '远期估值（一致预期消化）';
-      grid.appendChild(h4);
-      ['风格', '一级行业', '二级行业'].forEach(function (cat) { forwardPE(grid, cat); });
-    }
-    if (!section || section === '重要指数') {
-      var h5 = document.createElement('div'); h5.className = 'section-title'; h5.textContent = '重要指数（快照）';
-      grid.appendChild(h5);
-      var snap = document.createElement('div');
-      snap.className = 'snap-grid';
-      snap.style.gridColumn = '1 / -1';
-      D.valuation.index_snapshot.forEach(function (s) {
-        var el = document.createElement('div');
-        el.className = 'snap-card';
-        var rows = '';
-        if (s.pe != null) rows += '<div class="snap-row"><span>PE-TTM</span><span class="snap-val">' + s.pe.toFixed(2) +
-          (s.pe_pct_10y != null ? ' <span style="font-weight:400;color:#9ca3af;">(10Y分位 ' + s.pe_pct_10y.toFixed(0) + '%)</span>' : '') + '</span></div>';
-        if (s.pb != null) rows += '<div class="snap-row"><span>PB-LF</span><span class="snap-val">' + s.pb.toFixed(2) +
-          (s.pb_pct_10y != null ? ' <span style="font-weight:400;color:#9ca3af;">(10Y分位 ' + s.pb_pct_10y.toFixed(0) + '%)</span>' : '') + '</span></div>';
-        if (s.dy != null) rows += '<div class="snap-row"><span>股息率</span><span class="snap-val">' + s.dy.toFixed(2) + '%</span></div>';
-        rows += '<div class="snap-row"><span>收盘</span><span class="snap-val">' + s.close.toFixed(2) + '</span></div>';
-        el.innerHTML = '<div><span class="snap-name">' + s.name + '</span><span class="snap-code">' + s.code + '</span></div>' +
-          '<div class="snap-rows">' + rows + '</div>' +
-          '<div class="snap-date">截至 ' + s.date + ' · 进门MCP</div>';
-        snap.appendChild(el);
-      });
-      grid.appendChild(snap);
+      forwardPE(grid, '一级行业');
     }
   }
 
@@ -2614,9 +2588,14 @@
     clearCanvas();
     renderNav();
     var mod = MODULES.filter(function (m) { return m.id === id; })[0];
+    // section 校验：无效（旧链接/拼写错误）时回退到第一个子分页，避免标题显示 undefined
+    if (mod.children && mod.children.length) {
+      var validSec = mod.children.some(function (c) { return c.section === section; });
+      if (!validSec) { section = mod.children[0].section; currentSection = section; }
+    }
     document.getElementById('module-title').textContent =
       mod.name + (section ? ' · ' + (mod.children.filter(function (c) { return c.section === section; })[0] || {}).name : '');
-    var subs = { overview: '三维行业比较：盈利 · 估值 · 情绪', valuation: 'PE/PB十年序列 · 分位 · 远期估值',
+    var subs = { overview: '三维行业比较：盈利 · 估值 · 情绪', valuation: 'PE/PB十年序列 · 十年分位 · 远期PE(26E/27E)',
       earnings: '一致预期增速 · 二阶导 · ROE', sentiment: '大盘 · 风格 · 行业情绪 · 机构持仓',
       macro_cn: '金融领先 · 增长出口 · K型 · 物价（张瑜框架 × 长江数据）',
       liquidity: '私募仓位 · 两融 · ETF · 新备案 · 量化净值',
