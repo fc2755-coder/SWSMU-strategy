@@ -250,6 +250,11 @@
   }
 
   function addZoomHover(card, chart) {
+    // 仅对真正配置了 dataZoom 的长时间序列图启用；
+    // 否则（类目条形图/散点图/热力图等）会被注入 ECharts 默认 dataZoom，冒出多余蓝色拉条
+    var opt = null;
+    try { opt = chart.getOption() || {}; } catch (e) { opt = null; }
+    if (!opt || !opt.dataZoom || !opt.dataZoom.length) return;
     var strip = document.createElement('div');
     strip.className = 'zoom-hover-strip';
     card.querySelector('.card-body').appendChild(strip);
