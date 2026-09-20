@@ -332,6 +332,9 @@
     container.appendChild(bar);
   }
 
+  function num2(v) { return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(2); }
+  function num1(v) { return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(1); }
+
   function percentileColor(v) {
     if (v <= 20) return '#16a34a';
     if (v <= 50) return '#2563eb';
@@ -439,12 +442,12 @@
       var el = document.createElement('div');
       el.className = 'snap-card';
       var rows = '';
-      if (s.pe != null) rows += '<div class="snap-row"><span>PE-TTM</span><span class="snap-val">' + s.pe.toFixed(2) +
+      if (s.pe != null) rows += '<div class="snap-row"><span>PE-TTM</span><span class="snap-val">' + num2(s.pe) +
         (s.pe_pct_10y != null ? ' <span style="font-weight:400;color:#9ca3af;">(10Y分位 ' + s.pe_pct_10y.toFixed(0) + '%)</span>' : '') + '</span></div>';
-      if (s.pb != null) rows += '<div class="snap-row"><span>PB-LF</span><span class="snap-val">' + s.pb.toFixed(2) +
+      if (s.pb != null) rows += '<div class="snap-row"><span>PB-LF</span><span class="snap-val">' + num2(s.pb) +
         (s.pb_pct_10y != null ? ' <span style="font-weight:400;color:#9ca3af;">(10Y分位 ' + s.pb_pct_10y.toFixed(0) + '%)</span>' : '') + '</span></div>';
-      if (s.dy != null) rows += '<div class="snap-row"><span>股息率</span><span class="snap-val">' + s.dy.toFixed(2) + '%</span></div>';
-      rows += '<div class="snap-row"><span>收盘</span><span class="snap-val">' + s.close.toFixed(2) + '</span></div>';
+      if (s.dy != null) rows += '<div class="snap-row"><span>股息率</span><span class="snap-val">' + num2(s.dy) + '%</span></div>';
+      if (s.close != null) rows += '<div class="snap-row"><span>收盘</span><span class="snap-val">' + num2(s.close) + '</span></div>';
       el.innerHTML = '<div><span class="snap-name">' + s.name + '</span><span class="snap-code">' + s.code + '</span></div>' +
         '<div class="snap-rows">' + rows + '</div>' +
         '<div class="snap-date">截至 ' + s.date + ' · 进门MCP</div>';
@@ -1305,19 +1308,19 @@
         '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
         + '<tr><td style="padding:6px;border-bottom:1px solid var(--border);"><b>高估值 vs 低估值</b></td><td style="padding:6px;border-bottom:1px solid var(--border);">'
         + (hlLast != null && hlLast > 0.05 ? '<span style="color:var(--red);">高估值占优</span>' : (hlLast != null && hlLast < -0.05 ? '<span style="color:var(--green);">低估值占优</span>' : '<span>均衡</span>'))
-        + '<span style="color:var(--text-faint);">（40日收益差 ' + (hlLast * 100).toFixed(1) + '%）</span></td></tr>'
+        + '<span style="color:var(--text-faint);">（40日收益差 ' + num1(hlLast != null ? hlLast * 100 : null) + '%）</span></td></tr>'
         + '<tr><td style="padding:6px;border-bottom:1px solid var(--border);"><b>成长 vs 价值</b></td><td style="padding:6px;border-bottom:1px solid var(--border);">'
         + (gvLast != null && gvLast > 0.05 ? '<span style="color:var(--red);">成长占优</span>' : (gvLast != null && gvLast < -0.05 ? '<span style="color:var(--green);">价值占优</span>' : '<span>均衡</span>'))
-        + '<span style="color:var(--text-faint);">（40日收益差 ' + (gvLast * 100).toFixed(1) + '%）</span></td></tr>'
+        + '<span style="color:var(--text-faint);">（40日收益差 ' + num1(gvLast != null ? gvLast * 100 : null) + '%）</span></td></tr>'
         + '<tr><td style="padding:6px;border-bottom:1px solid var(--border);"><b>TMT vs 红利</b></td><td style="padding:6px;border-bottom:1px solid var(--border);">'
         + (trLast != null && trLast > 0.05 ? '<span style="color:var(--red);">TMT占优</span>' : (trLast != null && trLast < -0.05 ? '<span style="color:var(--green);">红利占优</span>' : '<span>均衡</span>'))
-        + '<span style="color:var(--text-faint);">（40日收益差 ' + (trLast * 100).toFixed(1) + '%）</span></td></tr>'
+        + '<span style="color:var(--text-faint);">（40日收益差 ' + num1(trLast != null ? trLast * 100 : null) + '%）</span></td></tr>'
         + '<tr><td style="padding:6px;border-bottom:1px solid var(--border);"><b>大盘 vs 小盘</b></td><td style="padding:6px;border-bottom:1px solid var(--border);">'
-        + (top5Last > 50 ? '<span style="color:var(--red);">资金集中大盘</span>' : '<span style="color:var(--green);">资金扩散小盘</span>')
-        + '<span style="color:var(--text-faint);">（前5%成交占比 ' + top5Last.toFixed(1) + '%；>50%=集中，<45%=扩散，45→35%=小盘超额窗口）</span></td></tr>'
+        + (top5Last != null && top5Last > 50 ? '<span style="color:var(--red);">资金集中大盘</span>' : '<span style="color:var(--green);">资金扩散小盘</span>')
+        + '<span style="color:var(--text-faint);">（前5%成交占比 ' + num1(top5Last) + '%；>50%=集中，<45%=扩散，45→35%=小盘超额窗口）</span></td></tr>'
         + '<tr><td style="padding:6px;"><b>红利 vs 债券</b></td><td style="padding:6px;">'
-        + (spread > 2 ? '<span style="color:var(--red);">红利性价比高</span>' : (spread < 1.5 ? '<span>性价比一般</span>' : '<span>中性</span>'))
-        + '<span style="color:var(--text-faint);">（股息率 ' + divLast.toFixed(1) + '% − 10Y国债 ' + y10Last.toFixed(1) + '% = 利差 ' + spread.toFixed(1) + '%）</span></td></tr>'
+        + (spread != null && !isNaN(spread) && spread > 2 ? '<span style="color:var(--red);">红利性价比高</span>' : (spread != null && !isNaN(spread) && spread < 1.5 ? '<span>性价比一般</span>' : '<span>中性</span>'))
+        + '<span style="color:var(--text-faint);">（股息率 ' + num1(divLast) + '% − 10Y国债 ' + num1(y10Last) + '% = 利差 ' + num1(spread) + '%）</span></td></tr>'
         + '</table>';
       container.appendChild(styleCard0);
       registerCard(styleCard0, null, '风格判断 总结 高估值 低估值 成长 价值 TMT 红利 大盘 小盘 谁占优');
