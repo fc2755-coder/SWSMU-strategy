@@ -429,8 +429,7 @@
       + '<b style="color:var(--text-main);">第三层（宏观与资金）</b>：<b>国内宏观</b>看六角度（金融领先→增长→K型消费→物价） → <b>资金面</b>看私募仓位、两融、ETF流向。'
       + '宏观定基调（牛市/熊市/震荡），资金定拐点（增量/存量/去化）。<br>'
       + '<b style="color:var(--text-main);">第四层（海外）</b>：<b>海外宏观</b>看美债分解（短端加息预期+长端期限溢价）、CDS风险、油价催化。<br>'
-      + '<b style="color:var(--text-main);">第五层（结论）</b>：<b>综合打分</b>——五维排名合成 + PB-ROE散点 + 胜率-赔率象限 + PEG排序。输出行业配置建议。<br>'
-      + '<span style="color:var(--text-faint);">方法论：拥挤度体系(量价+资金+情绪七因子) + 胜率×赔率象限 + 景气-趋势-拥挤 + 二阶导定价范式</span>';
+      + '<b style="color:var(--text-main);">第五层（结论）</b>：<b>综合打分</b>——五维排名合成 + PB-ROE散点 + 胜率-赔率象限 + PEG排序。输出行业配置建议。';
     container.appendChild(guideCard);
     registerCard(guideCard, null, '阅读指南 使用方法 导航');
 
@@ -2171,17 +2170,12 @@
     b0.style.color = 'var(--text-sub)';
     b0.innerHTML = SC.methodology
       + '<br><b style="color:var(--text-main);">打分逻辑</b>：盈利分(胜率) 越高=景气越好；估值分(赔率) 越高=越便宜；情绪分 越高=越冷（逆向价值）；资金分 越高=越欠配（有加仓空间）；动量分 越高=短期越热。'
-      + '<br><b style="color:var(--text-main);">A股定价范式</b>：A股"只看二阶导、不交易价值倒挂"——只要增速放缓（哪怕30%绝对增速），也会引发踩踏。'
-      + '因此二阶导是最重要的单一指标。但纯粹追逐加速度的局限性：无绝对价值锚点→一旦景气瑕疵出现回撤巨大。'
-      + '<b>修正方向</b>：① 全周期平滑利润（Normalized Earnings，席勒式3-5年平均）替代极值利润；② FCF+股东回报（分红率6-8%）作为绝对估值底线。'
-      + '<br><b style="color:var(--text-main);">估值指标选择（平安证券）</b>：上游周期、地产金融用<b>PB</b>（周期底部盈利波动大，PB代表安全边际）；'
+      + '<br><b style="color:var(--text-main);">估值指标选择</b>：上游周期、地产金融用<b>PB</b>（周期底部盈利波动大，PB代表安全边际）；'
       + '其他行业用<b>PE</b>（盈利相对稳定，PE反映市场定价）。当前：电子/通信估值分位>80%（偏贵）；建材/电力设备/食品饮料/银行/非银<30%（便宜）。'
-      + '<br><b style="color:var(--text-main);">PEG口径</b>：PE-TTM ÷ (1+26E增速) ÷ 26E增速×100。PEG<1=成长性价比高。'
-      + '注意：A股给短期G权重极高，给长期ROIC权重极低——短视的PEG掩盖了ROIC的本质。成长行业用PEG需同时看ROE持续性。'
       + '<br><b style="color:var(--text-main);">二阶导</b>：27E−26E增速差(百分点)。>0=盈利预期加速（"Δg>0"=产业趋势行情存续的核心）；'
       + '<0=增速见顶回落（领先股价拐点1-2季度）。A股的相对收益考核机制导致资金追逐边际改善最锐利的方向→二阶导转负=资金撤退信号。'
       + '<br><b style="color:var(--text-main);">胜率-赔率象限</b>：高胜率+高赔率=核心配置；低胜率+高赔率=左侧布局；'
-      + '高胜率+低赔率=持有减仓；低胜率+低赔率=规避。当前阶段判断：由K型向菱形过渡，先看胜率、再看赔率。';
+      + '高胜率+低赔率=持有减仓；低胜率+低赔率=规避。当前阶段：先看胜率、再看赔率。';
     container.appendChild(card0);
     registerCard(card0, null, '打分方法论 PB-ROE PEG 二阶导 胜率 赔率');
 
@@ -2340,7 +2334,7 @@
     grid2.appendChild(h4);
     var pegCard = makeCard('PE分位(x) × 26E增速(y) 四象限', '%', '2026-09-15', true,
       '左上=低PE分位+高增速（最佳，双击主升）；右下=高PE分位+低增速（M顶风险区，规避）。'
-      + '增速高且PE未透支=双击主升细分；增速见顶回落而估值高=坚决规避（国投证券框架）。', 'PEG象限');
+      + '增速高且PE未透支=双击主升细分；增速见顶回落而估值高=坚决规避。', 'PEG象限');
     grid2.appendChild(pegCard);
     var pegChart = echarts.init(pegCard.querySelector('.card-body'));
     var pegRows = SC.rows.filter(function (r) { return r.pe_pct != null && r.g26e != null; });
