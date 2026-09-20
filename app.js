@@ -1036,6 +1036,37 @@
     });
   }
 
+  /* ---------------- 情绪 ---------------- */
+  function rollingMeanSD(values, w) {
+    var mean = new Array(values.length).fill(null);
+    var sd = new Array(values.length).fill(null);
+    var sum = 0, sumsq = 0, q = [];
+    // 收集所有非空值的索引，先用可用数据计算部分窗口
+    var validIndices = [];
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] != null) validIndices.push(i);
+    }
+    for (var i = 0; i < values.length; i++) {
+      var v = values[i];
+      if (v != null) { q.push(v); sum += v; sumsq += v * v; }
+      while (q.length > w) { var o = q.shift(); sum -= o; sumsq -= o * o; }
+      // 满窗用满窗；不满窗但已有一定数据(≥w*0.5)也计算
+      if (q.length === w) {
+        var m = sum / w;
+        var varr = Math.max(sumsq / w - m * m, 0);
+        mean[i] = +m.toFixed(5);
+        sd[i] = +Math.sqrt(varr).toFixed(5);
+      } else if (q.length >= Math.max(10, Math.floor(w * 0.5)) && q.length < w && i === values.length - 1) {
+        // 末尾不满窗：用已有数据算
+        var m = sum / q.length;
+        var varr = Math.max(sumsq / q.length - m * m, 0);
+        mean[i] = +m.toFixed(5);
+        sd[i] = +Math.sqrt(varr).toFixed(5);
+      }
+    }
+    return { mean: mean, sd: sd };
+  }
+
   function renderERP(container) {
     var erp = D.sentiment.erp;
     var dates = erp.dates, vals = erp.erp, closes = erp.close;
