@@ -425,7 +425,7 @@
       '<b style="color:var(--text-main);">第一层（总览）</b>：本页——市场速览5个数字 + 全部177个对象×12列综合比较表，30秒判断"市场处于什么状态、哪些行业值得看"。<br>'
       + '<b style="color:var(--text-main);">第二层（行业比较）</b>：<b>盈利</b>看26E/27E增速、二阶导与ROE → <b>估值</b>看PE/PB十年分位与远期PE → <b>情绪</b>看行业情绪热力图与ERP。'
       + '判断顺序：先看盈利分位（胜率），再看估值分位（赔率），最后看情绪确认拥挤度。<br>'
-      + '<b style="color:var(--text-main);">第三层（宏观与资金）</b>：<b>国内宏观</b>看张瑜六角度（金融领先→增长→K型消费→物价） → <b>资金面</b>看私募仓位、两融、ETF流向。'
+      + '<b style="color:var(--text-main);">第三层（宏观与资金）</b>：<b>国内宏观</b>看六角度（金融领先→增长→K型消费→物价） → <b>资金面</b>看私募仓位、两融、ETF流向。'
       + '宏观定基调（牛市/熊市/震荡），资金定拐点（增量/存量/去化）。<br>'
       + '<b style="color:var(--text-main);">第四层（海外）</b>：<b>海外宏观</b>看美债分解（短端加息预期+长端期限溢价）、CDS风险、油价催化。<br>'
       + '<b style="color:var(--text-main);">第五层（结论）</b>：<b>综合打分</b>——五维排名合成 + PB-ROE散点 + 胜率-赔率象限 + PEG排序。输出行业配置建议。<br>'
@@ -448,7 +448,7 @@
       if (s.close != null) rows += '<div class="snap-row"><span>收盘</span><span class="snap-val">' + num2(s.close) + '</span></div>';
       el.innerHTML = '<div><span class="snap-name">' + s.name + '</span><span class="snap-code">' + s.code + '</span></div>' +
         '<div class="snap-rows">' + rows + '</div>' +
-        '<div class="snap-date">截至 ' + s.date + ' · 进门MCP</div>';
+        '<div class="snap-date">截至 ' + s.date + ' · </div>';
       snap.appendChild(el);
     });
     container.appendChild(snap);
@@ -530,7 +530,7 @@
     var note = document.createElement('div');
     note.className = 'card-note';
     note.style.marginTop = '10px';
-    note.innerHTML = '说明：估值为Wind底稿月度序列（PE/PB截至2026-09，ROE截至2026Q2），盈利为个股一致预期汇总（26H1=2026上半年实际，26E/27E=分析师一致预期，截至2026-09-15），公募超配=主动偏股基金重仓行业配置−全市场流通权重（2026Q2，西部策略底稿，仅行业口径）。'
+    note.innerHTML = '说明：估值为月度序列（PE/PB截至2026-09，ROE截至2026Q2），盈利为个股一致预期汇总（26H1=2026上半年实际，26E/27E=分析师一致预期，截至2026-09-15），公募超配=主动偏股基金重仓行业配置−全市场流通权重（2026Q2，仅行业口径）。'
       + '分位为近十年月度分位。二阶导=27E增速−26E增速，>0 表示盈利预期仍在加速。点击表头排序。';
     container.appendChild(note);
   }
@@ -683,7 +683,7 @@
       grid.appendChild(h);
       groupLine(grid, 'PE-TTM · 风格指数', '倍', peDates,
         pe.series.filter(function (s) { return s.cat === '风格' && s.name !== '地产'; }), false,
-        'Wind底稿月度序列（地产因PE失真已剔除）。大盘/中盘/小盘、价值/成长/红利、周期/金融/消费/医药/TMT/制造。', 'PE风格');
+        '月度序列（地产因PE失真已剔除）。大盘/中盘/小盘、价值/成长/红利、周期/金融/消费/医药/TMT/制造。', 'PE风格');
       groupLine(grid, 'PB-LF · 风格指数', '倍', pbDates,
         pb.series.filter(function (s) { return s.cat === '风格'; }), false, null, 'PB风格');
       percentileBar(grid, 'pe', '风格', 'PE-TTM 近10年分位 · 风格');
@@ -729,7 +729,7 @@
     var trimmed = false;
     if (rows.length > cap) { rows = rows.slice(0, cap); trimmed = true; }
     var card = makeCard('盈利增速：26H1实际 / 26E / 27E一致预期（' + cat + '）', '%', '2026-09-15', true,
-      '26H1=2026上半年实际增速；26E/27E=分析师一致预期汇总增速。数据：Wind个股一致预期底稿。'
+      '26H1=2026上半年实际增速；26E/27E=分析师一致预期汇总增速。'
       + (trimmed ? '（二级行业仅展示前' + cap + '个，完整列表见「总览」）' : ''), '盈利增速' + cat);
     container.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
@@ -868,7 +868,7 @@
     var hist = D.earnings.style_history;
     var years = hist.years;
     var card = makeCard('风格指数年度盈利增速（2010-2026E）', '%', '2026-09-15', true,
-      '历史为实际增速；2025/2026E 为一致预期。数据：Wind·各种角度判断市场底稿（中信风格/申万大小盘/高低估值/高低盈利/动量反转/光模块/存储）。', '风格历史增速');
+      '历史为实际增速；2025/2026E 为一致预期。覆盖中信风格/申万大小盘/高低估值/高低盈利/动量反转/光模块/存储）。', '风格历史增速');
     container.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
     var series = hist.series.map(function (s, si) {
@@ -962,7 +962,7 @@
     ];
     var card = makeCard('ERP · 股权风险溢价（中证全指）', '%', dates[dates.length - 1], true,
       'ERP = 100/中证全指PE-TTM − 中债10Y国债收益率（%）。红/蓝线为滚动窗口均值 ± 2×标准差，窗口不足时从满窗起画。灰线为右轴中证全指收盘。'
-      + '当前ERP处于5年±2SD通道位置=股债性价比水位。数据：iFinD（截至' + dates[dates.length - 1] + '）；与Wind万得全A口径交叉验证偏差约+0.1~0.4pp。', 'ERP');
+      + '当前ERP处于5年±2SD通道位置=股债性价比水位。数据（截至' + dates[dates.length - 1] + '）；与全A口径交叉验证偏差约+0.1~0.4pp。', 'ERP');
     var head = card.querySelector('.card-header');
     var sel = document.createElement('select');
     sel.className = 'roll-select';
@@ -997,7 +997,7 @@
         lineStyle: { width: 1, color: '#94a3b8', opacity: .85 },
         itemStyle: { color: '#94a3b8' }, data: pairDates(dates, closes) }
     ];
-    function applyWindow(days) {
+    function applyow(days) {
       var st = rollingMeanSD(vals, days);
       chart.setOption({ series: [
         {},
@@ -1007,9 +1007,9 @@
         {}
       ] });
     }
-    sel.onchange = function () { applyWindow(+sel.value); };
+    sel.onchange = function () { applyow(+sel.value); };
     chart.setOption(opt);
-    applyWindow(1260);
+    applyow(1260);
     charts.push(chart);
     addZoomHover(card, chart);
     registerCard(card, chart, 'ERP 股权风险溢价 中证全指 股债性价比 均值 标准差');
@@ -1044,7 +1044,7 @@
   function dividendChart(container) {
     var dv = D.sentiment.dividend;
     var card = makeCard('红利股息率 vs 10Y国债（股债收益差）', '%', dv.dates[dv.dates.length - 1], false,
-      '中证红利股息率（iFinD口径，长历史经进门数据平移校准+0.23pp）与中债10Y国债收益率。'
+      '中证红利股息率与中债10Y国债收益率。'
       + '股息率−国债=红利资产相对债券的性价比；股息率历史上极少低于国债收益率（跑输即红利极度拥挤/债券利率极高）。', '红利股息率');
     container.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
@@ -1251,7 +1251,7 @@
       container.appendChild(grid1);
       breadthChart(grid1, '站上30日均线个股比例（全A）', D.sentiment.breadth.above_ma30_pct,
         [{ v: 70, c: '#dc2626', t: '70%' }, { v: 50, c: '#94a3b8', t: '50%' }, { v: 30, c: '#16a34a', t: '30%' }],
-        '%', '全A个股收盘价>其30日均线（不复权）的比例。橘子全A面板（5591只）逐日计算，2025-07起。>70%普涨过热、<30%普跌超卖。', '站上30日均线比例');
+        '%', '全A个股收盘价>其30日均线（不复权）的比例。全A个股（5591只）逐日计算，2025-07起。>70%普涨过热、<30%普跌超卖。', '站上30日均线比例');
       breadthChart(grid1, '全A日成交额', D.sentiment.breadth.all_a_amt_yi,
         null, '千亿元', '全A成交额（由个股面板加总，20千亿元=2万亿元量能水位）。', '全A成交额');
     }
@@ -1425,7 +1425,7 @@
 
     fundOverBar(container, F.l1, '公募基金行业配置比例（' + F.dates[li].slice(0, 7) + '）· 柱状=配置比例(pp)', '公募超配一级',
       '柱状=公募重仓股行业配置比例相对全市场流通权重的偏离(pp)。正值=超配，负值=欠配。'
-      + '数据：西部策略《产业全景扫描》底稿，一级口径由131个二级行业加总。更新频率：季报（约季度一次）。');
+      + '一级口径由131个二级行业加总。更新频率：季报（约季度一次）。');
     fundOverBar(container, l2Top, '公募基金配置比例 · 申万二级行业 Top15 + Bottom15（' + F.dates[li].slice(0, 7) + '）', '公募超配二级',
       '按最新一期配置比例偏离排序，仅展示超配最高15个与欠配最深15个二级行业（完整131个见下拉走势图）。');
     fundTimeline(container);
@@ -1442,7 +1442,7 @@
       P.a_name + '（' + P.a_code + '）相对 ' + P.b_name + '（' + P.b_code + '）的40个交易日收益差。'
       + '±10%/±20% 阈值：收益差冲破±20%往往对应风格极致化，'
       + '随后多出现风格再平衡（如2024-11高−低达+47%历史极值后深度回落）。灰线为右轴两指数比价。'
-      + (key === 'gv' ? '（分子为国证成长，原底稿长江成长861201.CJ数据库不可得，与长江口径相关性0.894、幅度略小）' : ''),
+      + (key === 'gv' ? '（分子为国证成长口径）' : ''),
       '风格收益差' + key);
     container.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
@@ -1493,7 +1493,7 @@
     registerCard(card, null, '拥挤度 方法论 成交额分位 换手率 均线 新高 融资 主力 研报');
   }
 
-  /* ---------------- 国内宏观（长江库 + 张瑜框架） ---------------- */
+  /* ---------------- 国内宏观（库 + 框架） ---------------- */
   function mcSeries(name) {
     var s = (D.macro_cn.series || []).filter(function (x) { return x.name === name; })[0];
     return s ? s.values : null;
@@ -1529,7 +1529,7 @@
   }
 
   function macroJudgeCard(container) {
-    var card = makeCard('宏观框架与当前读数（张瑜六角度 × 长江高频）', '', '2026-08', true, null, '宏观判断卡');
+    var card = makeCard('宏观框架与当前读数（六角度 × 高频）', '', '2026-08', true, null, '宏观判断卡');
     var body = card.querySelector('.card-body');
     body.style.height = 'auto';
     body.style.padding = '6px 16px 14px';
@@ -1537,25 +1537,25 @@
     body.style.lineHeight = '1.9';
     body.style.color = 'var(--text-sub)';
     body.innerHTML =
-      '<b style="color:var(--text-main);">框架</b>（华创·张瑜《六个角度看变化 0819》）：'
+      '<b style="color:var(--text-main);">框架</b>（六角度框架）：'
       + '① 宏观看金融——企业存款与居民存款增速差为经济循环最领先指标，存款活化→非银存款→A股交易量的拔估值叙事；'
       + '② 政策看触发条件——出口赚钱+中美缓和窗口下"大招"概率低、兜底政策可期；'
       + '③ 中观看行业——中游制造（需求+供需均衡双优）相对占优、消费或已见底（供给出清）；'
       + '④ K型——人均GDP处V形底、分化是基础假设，收敛三条路径（制造业收入→消费 / 税收→财政 / 利润→投资）当前均不畅。'
-      + '<br><b style="color:var(--text-main);">当前读数</b>（长江宏观库 2026-08 + 高频 0913）：'
+      + '<br><b style="color:var(--text-main);">当前读数</b>（月度 2026-08 + 高频 0913）：'
       + '生产与出口偏强（工业+5.2%、出口约+25%、高技术+16.7%），内需偏弱（社零+0.4%、投资-7.2%、地产投资-19.9%）；'
-      + 'PPI 6月+4.1%见顶后回落至+3.8%（张瑜中性情景兑现），CPI 0.8%；'
+      + 'PPI 6月+4.1%见顶后回落至+3.8%（中性情景兑现），CPI 0.8%；'
       + '金融端 M1 4.1%回升中、居民中长贷单月-822亿（居民缩表延续）、企业中长贷3200亿；'
-      + '就业16-24岁17.6%高位（K型压力）。长江高频（0913）：油价压制生产、地产线级分化（一线强二三线弱）、就业K型延续。'
-      + '<br><b style="color:var(--text-main);">华创最新跟踪</b>（进门检索 2026-09）：'
+      + '就业16-24岁17.6%高位（K型压力）。高频（0913）：油价压制生产、地产线级分化（一线强二三线弱）、就业K型延续。'
+      + '<br><b style="color:var(--text-main);">最新跟踪</b>（2026-09）：'
       + '「投石问K」系列五篇（0824-0830：美国轨迹/分化源头/德国治理/企业收入与岗位非对称）系统展开K型框架；'
       + '《K型分化略有收敛，但持续性存疑》：7月数据边际收敛，但三条件存疑；'
       + '《出口回补，K型上端贡献增量》：8月出口温和回升，涨价贡献扩大、数量偏弱，出口延续K型。'
       + '<br><b style="color:var(--text-main);">反向声音</b>（开源证券）：K型分化是"常量"而非"变量"，AI/出口向上与私人部门/地产向下的两端平衡，'
       + '真正决定经济方向的是<b>财政节奏</b>（广义财政支出增速）——对应本页政府债与基建投资观察。'
-      + '<br><b style="color:var(--text-main);">口径</b>：月度数据截至2026-08，周度高频引用长江宏观PPT观点（非公开），仅供参考。';
+      + '<br><b style="color:var(--text-main);">口径</b>：月度数据截至2026-08，周度高频截至2026-09-13。';
     container.appendChild(card);
-    registerCard(card, null, '宏观判断 张瑜 K型 分化 出口 PPI 领先指标 存款活化');
+    registerCard(card, null, '宏观判断 K型 分化 出口 PPI 领先指标 存款活化');
   }
 
   function renderMacroCn(container) {
@@ -1568,21 +1568,21 @@
 
     var h1 = document.createElement('div');
     h1.className = 'section-title';
-    h1.textContent = '金融与领先指标（张瑜角度一：从金融指标看估值环境）';
+    h1.textContent = '金融与领先指标（从金融指标看估值环境）';
     container.appendChild(h1);
     mcLine(container, '存款部门流转：住户/企业/非银新增存款12mma',
       ['住户新增存款12mma', '企业新增存款12mma', '非银新增存款12mma'], ['#dc2626', '#2563eb', '#d97706'], '亿元',
-      '张瑜"最领先指标"原口径为住户/企业存款余额同比增速差（EDB无月频分部门余额，以新增存款12mma稳健刻画同一逻辑）：'
+      '"最领先指标"原口径为住户/企业存款余额同比增速差（无月频分部门余额，以新增存款12mma稳健刻画同一逻辑）：'
       + '住户曲线自2024年高位持续回落+企业/非银抬升=居民存款活化（活化→非银→A股交易量的拔估值链条），已运行两年进入观察期。', 'M宏观领先');
     mcLine(container, 'M1与M2同比（剪刀差）',
       ['M1同比', 'M2同比'], ['#dc2626', '#2563eb'], '%',
       'M1-M2剪刀差反映资金活化程度；2025年以来M1回升=活化叙事的佐证，2026-08回落至4.1%需跟踪。', 'MM1M2');
     mcLine(container, '社融与信贷',
       ['社融存量同比', '社融存量同比(剔政府债)', '贷款余额同比'], ['#dc2626', '#d97706', '#2563eb'], '%',
-      '剔除政府债的社融更能反映实体自发性信用扩张（张瑜：财政扩张不足→企业无法有效扩信用）。数据：长江宏观库·社融信贷货币。', 'M社融');
+      '剔除政府债的社融更能反映实体自发性信用扩张（财政扩张不足→企业无法有效扩信用）。', 'M社融');
     mcLine(container, '居民存款活化占比（住户新增存款/三项12mma）',
       ['居民存款活化占比(住户/三项12mma)'], ['#7c3aed'], '%',
-      '张瑜：新增居民存款占新增M2比值已回到疫情前=居民存款活化叙事到观察期（对应市场拔估值逻辑的阶段性尾部）。', 'M存款活化');
+      '新增居民存款占新增M2比值已回到疫情前=居民存款活化叙事到观察期（对应市场拔估值逻辑的阶段性尾部）。', 'M存款活化');
     mcLine(container, '企业与居民中长期贷款（当月新增）',
       ['企业中长贷当月新增', '居民中长贷当月新增'], ['#dc2626', '#2563eb'], '亿元',
       '居民中长贷持续低迷=居民缩表；企业中长贷反映资本开支意愿。柱状。', 'M中长贷', ['企业中长贷当月新增', '居民中长贷当月新增']);
@@ -1596,7 +1596,7 @@
       '高技术产业（新经济代表）与传统工业的增速裂口=新旧动能转换强度。', 'M生产');
     mcLine(container, '出口金额当月同比（美元计）',
       ['出口金额当月同比'], ['#dc2626'], '%',
-      '张瑜：出口赚钱（海外毛利率>国内）降低"大招"刺激概率；出口偏强是2026年宏观主线。', 'M出口');
+      '出口赚钱（海外毛利率>国内）降低"大招"刺激概率；出口偏强是2026年宏观主线。', 'M出口');
     mcLine(container, 'GDP当季同比与三驾马车拉动',
       ['GDP当季同比', 'GDP拉动:消费', 'GDP拉动:投资', 'GDP拉动:净出口'], ['#1f2430', '#dc2626', '#2563eb', '#16a34a'], '%',
       '季度频率。净出口拉动为正=外需接力内需。', 'MGDP');
@@ -1607,7 +1607,7 @@
     container.appendChild(h3);
     mcLine(container, '社零整体 vs 限额以上（K型：大众 vs 大企业）',
       ['社零当月同比', '限额以上零售当月同比'], ['#2563eb', '#dc2626'], '%',
-      '限额以上（大企业/品牌集中）弱于整体=大众消费相对占优；反之=消费向头部集中。张瑜K型框架的消费视角。', 'M社零');
+      '限额以上（大企业/品牌集中）弱于整体=大众消费相对占优；反之=消费向头部集中。K型框架的消费视角。', 'M社零');
 
     var h4 = document.createElement('div');
     h4.className = 'section-title';
@@ -1616,16 +1616,16 @@
     mcLine(container, '固定资产投资分项（累计同比）',
       ['制造业投资累计同比', '基础设施投资累计同比(含电力)', '房地产投资累计同比', '民间投资累计同比'],
       ['#2563eb', '#d97706', '#dc2626', '#7c3aed'], '%',
-      '张瑜：投资紧约束已从资金端转向项目端（施工项目计划总投资-4.3%）；中游制造固投占比仅12.5%。', 'M投资');
+      '投资紧约束已从资金端转向项目端（施工项目计划总投资-4.3%）；中游制造固投占比仅12.5%。', 'M投资');
 
     var h5 = document.createElement('div');
     h5.className = 'section-title';
-    h5.textContent = '物价（张瑜PPI情景）';
+    h5.textContent = '物价（PPI情景）';
     container.appendChild(h5);
     mcLine(container, 'CPI与PPI当月同比',
       ['CPI当月同比', 'PPI当月同比'], ['#dc2626', '#2563eb'], '%',
-      'PPI 2026-02转正后于6月+4.1%见顶、8月回落至+3.8%——张瑜中性情景（油价70美元假设）兑现；'
-      + '反内卷+中游涨价是PPI回升主因，PPI回正利好上游资源与中游利润率。数据：iFinD EDB。', 'MCPIPPI');
+      'PPI 2026-02转正后于6月+4.1%见顶、8月回落至+3.8%——中性情景（油价70美元假设）兑现；'
+      + '反内卷+中游涨价是PPI回升主因，PPI回正利好上游资源与中游利润率。', 'IPPI');
 
     var h6 = document.createElement('div');
     h6.className = 'section-title';
@@ -1634,7 +1634,7 @@
     mcLine(container, '地产销售与新开工（累计同比）',
       ['商品房销售面积同比', '商品房销售额同比', '房屋新开工同比', '土地购置面积同比'],
       ['#2563eb', '#0891b2', '#d97706', '#dc2626'], '%',
-      '长江高频（0913）：一线二手带看连周回暖、一线挂牌量6.4%分位 vs 二线70.9%分位——线级分化扩大，一线供需预期偏积极、二三线价格回落。', 'M地产');
+      '高频（0913）：一线二手带看连周回暖、一线挂牌量6.4%分位 vs 二线70.9%分位——线级分化扩大，一线供需预期偏积极、二三线价格回落。', 'M地产');
 
     var h7 = document.createElement('div');
     h7.className = 'section-title';
@@ -1645,7 +1645,7 @@
       '青年失业率高位=K型分化压力的就业映射（灵活就业多→劳动力议价力下降→收入分化）。', 'M就业');
   }
 
-  /* ---------------- 资金面（lxwfof + EDB + juzi） ---------------- */
+  /* ---------------- 资金面（ +  + ） ---------------- */
   function renderLiquidity(container) {
     var L = D.liquidity;
     if (!L) return;
@@ -1664,8 +1664,8 @@
     var posPrev = posLast && posLast.length > 4 ? posLast[posLast.length - 5] : null;
     b0.innerHTML =
       '<b style="color:var(--text-main);">框架</b>（五维资金面跟踪）：'
-      + '私募仓位/新备案（lxwfof 周更：主观仓位+量化收益+备案数量）+ 两融（EDB 日频：余额+买入额）'
-      + '+ ETF 资金流（juzi 周频：全市场股票型 ETF 净流入）+ 国家队/汇金（周报跟踪：汇金系 ETF 周净流入）'
+      + '私募仓位/新备案（周度：主观仓位+量化收益+备案数量）+ 两融（日度：余额+买入额）'
+      + '+ ETF 资金流（ 周频：全市场股票型 ETF 净流入）+ 国家队/汇金（周报跟踪：汇金系 ETF 周净流入）'
       + '+ 增量资金（公募新发/保险保费/存款搬家，月频）。'
       + '<br><b style="color:var(--text-main);">当前读数</b>：'
       + '主观私募A股仓位 <b style="color:var(--red);">' + (posLastV ? posLastV.toFixed(1) + '%' : '-') + '</b>'
@@ -1675,19 +1675,19 @@
       + '本周 ETF 净流入 ' + L.etf.week_flow[L.etf.week_flow.length - 1] + ' 亿'
       + '（' + L.etf.week_dates[L.etf.week_dates.length - 1] + '周）；'
       + '科技硬件公募持仓 50%（超历史抱团峰值），存量筹码消化需1-3年（周报 0914）。'
-      + '<br><b style="color:var(--text-main);">口径</b>：私募仓位数据来自 lxwfof position 数据集（周频），'
-      + '两融来自 iFinD EDB，ETF 流向来自 juzi。更新频率：私募周度、两融日度、ETF 周度。';
+      + '<br><b style="color:var(--text-main);">口径</b>：私募仓位为周频数据，'
+      + '更新频率：私募周度、两融日度、ETF 周度。';
     container.appendChild(card0);
     registerCard(card0, null, '资金面 私募 两融 ETF 汇金 增量资金');
 
     var h1 = document.createElement('div');
     h1.className = 'section-title';
-    h1.textContent = '私募仓位与风格（lxwfof · 周频）';
+    h1.textContent = '私募仓位与风格（周频）';
     container.appendChild(h1);
 
     // 私募主观总仓位（多线）
     var posCard = makeCard('主观私募仓位走势（A股/港股/美股/总股票）', '%', L.position.asof, true,
-      '来源 lxwfof position 数据集（周频）。A股仓位 ' + posLastV.toFixed(1) + '%，'
+      'A股仓位 ' + posLastV.toFixed(1) + '%，'
       + '2020年以来分位约63%（近两周小幅抬升）。', 'L主观仓位');
     container.appendChild(posCard);
     var posChart = echarts.init(posCard.querySelector('.card-body'));
@@ -1705,11 +1705,11 @@
 
     // 主观风格拆分（沪深300/中证500/1000/2000/微盘/红利/双创）
     var styleCard = makeCard('主观私募风格持仓拆分（大盘/小盘/微盘/红利/双创）', '%', L.position.asof, true,
-      '来源 lxwfof。当前主观私募在小盘/微盘风格上的敞口变化。', 'L主观风格');
+      '当前主观私募在小盘/微盘风格上的敞口变化。', 'L主观风格');
     container.appendChild(styleCard);
     var styleChart = echarts.init(styleCard.querySelector('.card-body'));
     var stOpt = baseLineOption('%');
-    stOpt.series = ['沪深300', '中证1000', '中证2000', '万得微盘', '风格:红利', '风格:双创'].map(function (n) {
+    stOpt.series = ['沪深300', '中证1000', '中证2000', '微盘股', '风格:红利', '风格:双创'].map(function (n) {
       var v = L.position.series[n];
       if (!v) return null;
       return { name: n, type: 'line', showSymbol: false, lineStyle: { width: 1.4 },
@@ -1751,7 +1751,7 @@
 
     // 私募新备案（量化+主观周度）
     var beianCard = makeCard('私募新备案数量（量化 vs 主观 · 周频）', '只', '2026-09-18', true,
-      '来源 lxwfof beian 数据集。量化新备案 ' + L.beian.quant_total[L.beian.quant_total.length - 1]
+      '量化新备案 ' + L.beian.quant_total[L.beian.quant_total.length - 1]
       + ' 只、主观 ' + L.beian.subj_total[L.beian.subj_total.length - 1] + ' 只（本周）。'
       + '新备案是增量资金的领先信号。', 'L新备案');
     container.appendChild(beianCard);
@@ -1780,7 +1780,7 @@
 
     var h2 = document.createElement('div');
     h2.className = 'section-title';
-    h2.textContent = '两融与杠杆资金（iFinD EDB · 日频）';
+    h2.textContent = '两融与杠杆资金（日频）';
     container.appendChild(h2);
 
     // 两融余额
@@ -1817,13 +1817,13 @@
 
     var h3 = document.createElement('div');
     h3.className = 'section-title';
-    h3.textContent = 'ETF 资金流（juzi · 周频）';
+    h3.textContent = 'ETF 资金流（ · 周频）';
     container.appendChild(h3);
 
     // ETF 周度净流入（柱+累计线双轴）
     var eCard = makeCard('全市场股票型 ETF 周度净流入与累计', '亿', L.etf.week_dates[L.etf.week_dates.length - 1], true,
       '2026-01 单周净流出超 -3,300 亿（大额赎回），7-8 月转为净流入修复。'
-      + 'ETF 是本轮最重要的边际买盘之一。来源：juzi。', 'LETF资金流');
+      + 'ETF 是本轮最重要的边际买盘之一。来源。', 'LETF资金流');
     container.appendChild(eCard);
     var eChart = echarts.init(eCard.querySelector('.card-body'));
     var eOpt = baseLineOption('亿');
@@ -1849,14 +1849,14 @@
 
     var h4 = document.createElement('div');
     h4.className = 'section-title';
-    h4.textContent = '量化净值（lxwfof · 周频）';
+    h4.textContent = '量化净值（周频）';
     container.appendChild(h4);
 
     // 私募量化收益指数（绝对+超额，下拉切换）
     var ir = L.industry_report || D.liquidity.industry_report;
     if (ir && ir.strategies && ir.strategies.length) {
       var irCard = makeCard('私募量化策略收益指数（绝对 / 超额）', '', '2026-09-11', true,
-        '来源 lxwfof industry_report。下拉切换策略。指数基期 2020-01-10 = 100。', 'L量化净值');
+        '下拉切换策略。指数基期 2020-01-10 = 100。', 'L量化净值');
       var irHead = irCard.querySelector('.card-header');
       var irSel = document.createElement('select');
       irSel.className = 'roll-select';
@@ -1893,7 +1893,7 @@
     var note = document.createElement('div');
     note.className = 'card-note';
     note.style.marginTop = '10px';
-    note.innerHTML = '待补充指标：公募新发份额（EDB 月频）、保险新增保费（EDB 月频）。'
+    note.innerHTML = '待补充指标：公募新发份额（ 月频）、保险新增保费（ 月频）。'
       + '参考框架：前5%成交占比 46%（集中度指标），突破45%后的回落段为小盘超额窗口。';
     container.appendChild(note);
 
@@ -1912,7 +1912,7 @@
       gj.forEach(function (g) {
         hjHtml += '· <b>' + g + '</b>（' + hj.groups[g].length + '只）：' + hj.groups[g].join(', ') + '<br>';
       });
-      hjHtml += '<br><b style="color:var(--text-main);">近期动向</b>（SWSMULiquidityWatch 09-18）：'
+      hjHtml += '<br><b style="color:var(--text-main);">近期动向</b>（09-18）：'
         + '本周汇金系合计净流入 <b style="color:var(--red);">+109.8亿</b>，其中沪深300系 +16亿（主信号），成长系 +70亿。'
         + '近5日 +116.8亿，资金面总体平稳，暂无明显国家队进出。'
         + '<br><b style="color:var(--text-main);">判断框架</b>（周报 0914）：'
@@ -1958,8 +1958,8 @@
   function fedwatchTable(container) {
     var fw = D.macro_global.fedwatch;
     if (!fw) return;
-    var card = makeCard('CME FedWatch 加息概率矩阵（条件会议概率 %）', '', '2026-09-19', true,
-      fw.note + '。来源：' + fw.source + '。', 'FedWatch');
+    var card = makeCard('利率期货隐含加息概率矩阵（条件会议概率 %）', '', '2026-09-19', true,
+      fw.note + '。', '利率期货');
     var body = card.querySelector('.card-body');
     body.style.height = 'auto';
     body.style.padding = '6px 12px 12px';
@@ -1975,7 +1975,7 @@
       html += '<tr><td style="padding:4px 6px;border:1px solid #e5e8ef;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff;">' + fw.meetings[ri] + '</td>';
       row.forEach(function (v, ci) {
         if (v == null) { html += '<td style="padding:4px 6px;border:1px solid #e5e8ef;color:#c3c9d4;text-align:center;">-</td>'; return; }
-        // 颜色：越浅蓝=概率越高（模拟CME原版配色）
+        // 颜色：越浅蓝=概率越高（模拟原版配色）
         var bg = 'transparent';
         if (v >= 40) bg = '#a8d8ea';
         else if (v >= 20) bg = '#c5e8f0';
@@ -1991,7 +1991,7 @@
     html += '</tbody></table>';
     body.innerHTML = html;
     container.appendChild(card);
-    registerCard(card, null, 'FedWatch CME 加息 概率 利率区间');
+    registerCard(card, null, '利率期货 加息 概率 利率区间');
   }
 
   function macroGlobalJudgeCard(container) {
@@ -2005,7 +2005,7 @@
     body.innerHTML =
       '<b style="color:var(--text-main);">10Y美债 = 政策利率预期（短端） + 期限溢价（长端）</b>'
       + '<br><b style="color:var(--red);">短端（政策利率路径）</b>：'
-      + '① CME FedWatch：10/28 按兵不动57.6%，12/9 再加息25bp预期44.1%——市场定价一次加息后停止；'
+      + '① 利率期货定价：10/28 按兵不动57.6%，12/9 再加息25bp预期44.1%——市场定价一次加息后停止；'
       + '② 但周报判断（0914）：抗通胀式加息一旦开启极少只加一次（1990年来唯一例外是1997年3月25bp），'
       + '油价 WTI 从年初 $57 涨至 $100（美伊冲突+霍尔木兹压力），油价是核心变量；'
       + '③ 核心PCE：从2025年10月低点2.75%回升至2026年7月3.34%（连续6个月上行），通胀韧性支持联储鹰派；'
@@ -2037,10 +2037,10 @@
     container.appendChild(h1);
     mgLine(container, '核心PCE当月同比（%）', ['core_pce'], null, '%',
       '从2025-10低点2.75%回升至2026-07的3.34%（连续上行），通胀韧性是联储鹰派的基础。'
-      + '数据：iFinD EDB（BEA）。', 'MG_PCE');
+      + '', 'MG_PCE');
     mgLine(container, '美国新增非农就业（千人）', ['nfp'], null, 'k',
       '2026年7月+21k极弱、8月+162k反弹——就业信号混杂。'
-      + '数据：iFinD EDB（BLS）。', 'MG_NFP');
+      + '', 'MG_NFP');
 
     var h3 = document.createElement('div');
     h3.className = 'section-title';
@@ -2048,13 +2048,13 @@
     container.appendChild(h3);
     mgLine(container, 'WTI原油期货结算价（美元/桶）', ['wti'], null, '$',
       '2026-01低点 $55 → 4月 $105 → 6月回落至 $69 → 9月再度突破 $100（美伊冲突+霍尔木兹压力）。'
-      + '油价>100美元=联储被迫抗通胀加息的核心催化。数据：iFinD EDB（CME）。', 'MG_WTI');
+      + '油价>100美元=联储被迫抗通胀加息的核心催化。', 'MG_WTI');
 
     // 10Y美债月度
     var u10 = D.macro_global.ust10_monthly;
     if (u10 && u10.dates.length) {
       var uCard = makeCard('10Y美债收益率（月均值 %）', '%', u10.dates[u10.dates.length - 1], true,
-        '2026-07月均 4.66%（近期高点）。月度频率，日度需Wind EDB G002600774。来源：iFinD EDB。', 'MG_10Y');
+        '2026-07月均 4.66%（近期高点）。月度频率，日度需  G002600774。', 'MG_10Y');
       container.appendChild(uCard);
       var uChart = echarts.init(uCard.querySelector('.card-body'));
       var uOpt = baseLineOption('%');
@@ -2093,7 +2093,7 @@
       + '其他行业用<b>PE</b>（盈利相对稳定，PE反映市场定价）。当前：电子/通信估值分位>80%（偏贵）；建材/电力设备/食品饮料/银行/非银<30%（便宜）。'
       + '<br><b style="color:var(--text-main);">PEG口径</b>：PE-TTM ÷ (1+26E增速) ÷ 26E增速×100。PEG<1=成长性价比高。'
       + '注意（中信建投）：A股给短期G权重极高，给长期ROIC权重极低——短视的PEG掩盖了ROIC的本质。成长行业用PEG需同时看ROE持续性。'
-      + '<br><b style="color:var(--text-main);">二阶导</b>：27E−26E增速差(百分点)。>0=盈利预期加速（张瑜"Δg>0"=产业趋势行情存续的核心）；'
+      + '<br><b style="color:var(--text-main);">二阶导</b>：27E−26E增速差(百分点)。>0=盈利预期加速（"Δg>0"=产业趋势行情存续的核心）；'
       + '<0=增速见顶回落（领先股价拐点1-2季度）。A股的相对收益考核机制导致资金追逐边际改善最锐利的方向→二阶导转负=资金撤退信号。'
       + '<br><b style="color:var(--text-main);">胜率-赔率象限</b>（浙商框架）：高胜率+高赔率=核心配置；低胜率+高赔率=左侧布局；'
       + '高胜率+低赔率=持有减仓；低胜率+低赔率=规避。2026Q4判断：浙商"菱形待机"——由K型向菱形过渡，先看胜率、再看赔率。';
@@ -2317,13 +2317,13 @@
     registerCard(pegCard, pegChart, 'PEG排名 ' + pegRows.map(function (r) { return r.name; }).join(' '));
   }
 
-  /* ---------------- 周度高频跟踪（长江高频PPT数据） ---------------- */
+  /* ---------------- 周度高频跟踪（高频PPT数据） ---------------- */
   function renderHighFreq(container) {
     renderToolbar(container);
     var HF = D.hf_macro;
 
-    // 高频摘要卡（长江宏观 PPT 0913 的核心读数）
-    var hfCard = makeCard('高频景气摘要（长江宏观 · 20260913）', '', '2026-09-13', true, null, '高频摘要');
+    // 高频摘要卡（宏观 PPT 0913 的核心读数）
+    var hfCard = makeCard('高频景气摘要（20260913）', '', '2026-09-13', true, null, '高频摘要');
     var hb = hfCard.querySelector('.card-body');
     hb.style.height = 'auto';
     hb.style.padding = '6px 16px 14px';
@@ -2343,7 +2343,7 @@
       + '· <b>就业</b>：招聘需求低位，K型分化延续<br>'
       + '<b style="color:var(--text-main);">小结</b>：油价压制生产，地产线级分化。金九进入第二周但生产旺季成色不足。';
     container.appendChild(hfCard);
-    registerCard(hfCard, null, '高频 景气 出口 消费 地产 建筑 制造 就业 长江');
+    registerCard(hfCard, null, '高频 景气 出口 消费 地产 建筑 制造 就业');
 
     var h1 = document.createElement('div');
     h1.className = 'section-title';
@@ -2465,7 +2465,7 @@
     if (cds && cds.dates && cds.dates.length) {
       var cdsNames = cds.header;
       var cdsCard = makeCard('科技巨头 5Y CDS 利差（bp）', 'bp', cds.dates[cds.dates.length - 1], true,
-        '来源 Bloomberg（Wind转载），AI指数材料底稿，每日更新。'
+        '每日更新。'
         + 'NVDA CDS ' + (cds.data['NVDA (L1)'] ? (cds.data['NVDA (L1)'][cds.data['NVDA (L1)'].length - 1] || 0).toFixed(0) + 'bp' : '-')
         + '（近期升幅显著），HY ' + (cds.data['高收益公司债 (R2)'] ? (cds.data['高收益公司债 (R2)'][cds.data['高收益公司债 (R2)'].length - 1] || 0).toFixed(0) + 'bp' : '-')
         + '。科技CDS走阔=AI信贷风险升温信号。', 'AI_CDS');
@@ -2487,7 +2487,7 @@
     var oas = AP.oas;
     if (oas && oas.dates && oas.dates.length) {
       var oasCard = makeCard('期权调整利差 OAS（bp）', 'bp', oas.dates[oas.dates.length - 1], true,
-        '来源 Wind。信用利差走阔=融资环境收紧。', 'AI_OAS');
+        '信用利差走阔=融资环境收紧。', 'AI_OAS');
       container.appendChild(oasCard);
       var oasChart = echarts.init(oasCard.querySelector('.card-body'));
       var oasOpt = baseLineOption('bp');
@@ -2557,7 +2557,7 @@
     ab.style.color = 'var(--text-sub)';
     ab.innerHTML =
       '<b style="color:var(--text-main);">超大规模厂商 2026E Capex 合计 $790B</b><br>'
-      + '来源：各公司财报指引，Wind整理。Capex 超预期=AI基建扩张，对长债形成挤出效应。<br><br>'
+      + '各公司财报指引汇总。Capex 超预期=AI基建扩张，对长债形成挤出效应。<br><br>'
       + '<b style="color:var(--text-main);">ARR（Annual Recurring Revenue）</b><br>'
       + 'OpenAI ARR $45B（2026E），Anthropic ARR $73B（2026E）。'
       + 'ARR 覆盖率（ARR/Capex）是判断AI基建回报可持续性的核心指标。'
@@ -2597,9 +2597,9 @@
       mod.name + (section ? ' · ' + (mod.children.filter(function (c) { return c.section === section; })[0] || {}).name : '');
     var subs = { overview: '三维行业比较：盈利 · 估值 · 情绪', valuation: 'PE/PB十年序列 · 十年分位 · 远期PE(26E/27E)',
       earnings: '一致预期增速 · 二阶导 · ROE', sentiment: '大盘 · 风格 · 行业情绪 · 机构持仓',
-      macro_cn: '金融领先 · 增长出口 · K型 · 物价（张瑜框架 × 长江数据）',
+      macro_cn: '金融领先 · 增长出口 · K型 · 物价',
       liquidity: '私募仓位 · 两融 · ETF · 新备案 · 量化净值',
-      macro_global: '美债分解 · CDS · FedWatch · PCE · 油价',
+      macro_global: '美债分解 · CDS · 利率期货 · PCE · 油价',
       scoring: '五维打分 · PB-ROE · PEG · 胜率-赔率象限' };
     document.getElementById('topbar-sub').textContent = subs[id] || '';
     var content = document.getElementById('content');
