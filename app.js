@@ -391,7 +391,7 @@
     var accelPos = l1rows.filter(function (r) { return r.g26e != null && r.g27e != null && (r.g27e - r.g26e) > 0; }).length;
     var cheapPE = D.valuation.pe.series.filter(function (s) { return s.cat === '一级行业' && s.pct != null && s.pct < 0.30; }).length;
     var hotSent = D.sentiment.industry.industries.filter(function (s) {
-      var v = s.sent30[s.sent30.length - 1];
+      var v = s.sent[s.sent.length - 1];
       return v != null && v >= 80;
     }).length;
     var scoreHi = D.scoring ? D.scoring.rows.filter(function (r) { return r.composite >= 65; }).length : 0;
@@ -1068,11 +1068,12 @@
     var ind = D.sentiment.industry;
     var inds = ind.industries;
     var dates = ind.dates;
-    var card = makeCard('行业情绪指标（30日口径）', '', dates[dates.length - 1], true,
-      '情绪 = (偏离度30日分位 + 成交额占比30日分位) / 2，范围 0~100。偏离度=收盘/MA30−1；成交额占比=行业成交额/30行业合计。'
+    var card = makeCard('行业情绪指标（60日口径）', '', dates[dates.length - 1], true,
+      '情绪 = (偏离度60日分位 + 成交额占比MA5的60日分位) / 2，范围 0~100。'
+      + '偏离度=收盘/MA60−1；成交额占比=行业成交额/30行业合计的5日均值。'
       + '90以上过热、10以下过冷。中信一级行业口径（与估值/盈利的申万口径名称基本对应）。'
-      + '<br><b>中信建投洞见</b>：A股不交易"价值倒挂"而交易"加速度"——只要高频数据的边际变化向上资金就涌入；增速放缓（哪怕30%）也踩踏。'
-      + '因此行业情绪的分位数变化方向（而非绝对值）才是核心信号。', '行业情绪指标');
+      + '<br><b>用法</b>：情绪是<b>行业间再平衡</b>的参考——过热行业未来60个交易日相对跑输（超额约−1.4pp），'
+      + '但不宜作绝对减仓信号（20日内动量仍在，减仓易少赚）。真正的信号是分位的方向变化而非绝对值。', '行业情绪指标');
     var head = card.querySelector('.card-header');
     var sel = document.createElement('select');
     sel.className = 'roll-select';
@@ -1097,7 +1098,7 @@
       { name: '行业指数价格', type: 'line', showSymbol: false,
         lineStyle: { width: 1.5, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
         emphasis: { focus: 'series' }, data: [] },
-      { name: '情绪(30日口径)', type: 'line', showSymbol: false, yAxisIndex: 1,
+      { name: '情绪(60日口径)', type: 'line', showSymbol: false, yAxisIndex: 1,
         lineStyle: { width: 1.8, color: '#dc2626' }, itemStyle: { color: '#dc2626' },
         emphasis: { focus: 'series' }, data: [],
         markLine: { silent: true, symbol: 'none',
@@ -1119,9 +1120,9 @@
       if (!s) return;
       chart.setOption({ series: [
         { data: pairDates(dates, s.close) },
-        { data: pairDates(dates, s.sent30) },
-        { data: pairDates(dates, s.dev_p30) },
-        { data: pairDates(dates, s.amt_p30) }
+        { data: pairDates(dates, s.sent) },
+        { data: pairDates(dates, s.dev_p60) },
+        { data: pairDates(dates, s.amt_p60) }
       ] });
     }
     sel.onchange = function () { load(sel.value); };
@@ -1142,12 +1143,12 @@
     var sliceDates = dates.slice(-N);
     var arr = [];
     inds.forEach(function (s, yi) {
-      var vals = s.sent30.slice(-N);
+      var vals = s.sent.slice(-N);
       for (var xi = 0; xi < N; xi++) {
         if (vals[xi] != null) arr.push([N - 1 - xi, yi, Math.round(vals[xi])]);
       }
     });
-    var card = makeCard('截面情绪热力图（30日口径 · 最近20个交易日）', '', dates[dates.length - 1], true, null, '截面情绪热力图');
+    var card = makeCard('截面情绪热力图（60日口径 · 最近20个交易日）', '', dates[dates.length - 1], true, null, '截面情绪热力图');
     var body = card.querySelector('.card-body');
     body.style.height = '680px';
     container.appendChild(card);
@@ -1159,7 +1160,7 @@
     var li = dates.length - 1;
     var hot = [], cold = [];
     inds.forEach(function (s) {
-      var v = s.sent30[li];
+      var v = s.sent[li];
       if (v == null) return;
       if (v >= 80) hot.push(s.name + '(' + Math.round(v) + ')');
       if (v <= 20) cold.push(s.name + '(' + Math.round(v) + ')');
@@ -1204,10 +1205,10 @@
     var ind = D.sentiment.industry;
     var li = ind.dates.length - 1;
     var rows = ind.industries
-      .map(function (s) { return { name: s.name, v: s.sent30[li], d: s.dev_p30[li], a: s.amt_p30[li], v250: s.last ? s.last.sent250 : null }; })
+      .map(function (s) { return { name: s.name, v: s.sent[li], d: s.dev_p60[li], a: s.amt_p60[li], v250: null }; })
       .filter(function (r) { return r.v != null; })
       .sort(function (a, b) { return b.v - a.v; });
-    var card = makeCard('行业情绪排序（最新 · 30日口径）', '', ind.dates[li], true,
+    var card = makeCard('行业情绪排序（最新 · 60日口径）', '', ind.dates[li], true,
       '每行两根并列条：橙=偏离度30日分位，绿=成交额占比30日分位；左侧数字=综合情绪（括号内为250日口径）。按综合情绪降序。', '行业情绪排序');
     container.appendChild(card);
     var chart = echarts.init(card.querySelector('.card-body'));
@@ -1441,7 +1442,7 @@
     var card = makeCard('风格收益差 · ' + P.title, '%', dates[li], true,
       P.a_name + '（' + P.a_code + '）相对 ' + P.b_name + '（' + P.b_code + '）的40个交易日收益差。'
       + '±10%/±20% 阈值：收益差冲破±20%往往对应风格极致化，'
-      + '随后多出现风格再平衡（如2024-11高−低达+47%历史极值后深度回落）。灰线为右轴两指数比价。'
+      + '随后多出现风格再平衡（如2024-11高−低达+47%历史极值后深度回落）。红线为右轴两指数比价。'
       + (key === 'gv' ? '（分子为国证成长口径）' : ''),
       '风格收益差' + key);
     container.appendChild(card);
@@ -1455,22 +1456,28 @@
       { type: 'value', scale: true, name: '比价', position: 'right',
         axisLabel: { color: '#94a3b8', fontSize: 11 }, splitLine: { show: false } }
     ];
+    opt.legend = { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3,
+      textStyle: { fontSize: 11, color: '#4b5563' } };
+    opt.tooltip = { trigger: 'axis', axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+      textStyle: { color: '#1f2430', fontSize: 12 } };
     opt.series = [
-      { name: '40日收益差', type: 'line', showSymbol: false,
-        lineStyle: { width: 1.8, color: '#dc2626' }, itemStyle: { color: '#dc2626' },
+      { name: '40日收益差（左轴）', type: 'line', showSymbol: false,
+        lineStyle: { width: 1.6, color: '#2563eb' }, itemStyle: { color: '#2563eb' },
         emphasis: { focus: 'series' },
         data: pairDates(dates, diff),
         markLine: { silent: true, symbol: 'none',
-          lineStyle: { width: 1 },
           data: [
-            { yAxis: 0.1, lineStyle: { color: '#d97706', type: 'solid' }, label: { formatter: '+10%', fontSize: 10, color: '#d97706' } },
-            { yAxis: -0.1, lineStyle: { color: '#d97706', type: 'solid' }, label: { formatter: '-10%', fontSize: 10, color: '#d97706', position: 'insideEndTop' } },
-            { yAxis: 0.2, lineStyle: { color: '#dc2626', type: 'dashed' }, label: { formatter: '+20%', fontSize: 10, color: '#dc2626' } },
-            { yAxis: -0.2, lineStyle: { color: '#dc2626', type: 'dashed' }, label: { formatter: '-20%', fontSize: 10, color: '#dc2626', position: 'insideEndTop' } },
-            { yAxis: 0, lineStyle: { color: '#c3c9d4' }, label: { show: false } }
+            { yAxis: 0.1, lineStyle: { width: 1, color: '#b9c0cc', type: 'dashed' },
+              label: { formatter: '±10%', fontSize: 10, color: '#9ca3af', position: 'insideEndTop' } },
+            { yAxis: -0.1, lineStyle: { width: 1, color: '#b9c0cc', type: 'dashed' }, label: { show: false } },
+            { yAxis: 0.2, lineStyle: { width: 1, color: '#9ca3af', type: 'dashed' },
+              label: { formatter: '±20%', fontSize: 10, color: '#6b7280', position: 'insideEndTop' } },
+            { yAxis: -0.2, lineStyle: { width: 1, color: '#9ca3af', type: 'dashed' }, label: { show: false } },
+            { yAxis: 0, lineStyle: { width: 1, color: '#d5dae3' }, label: { show: false } }
           ] } },
       { name: P.a_name + '/' + P.b_name + '（右轴）', type: 'line', showSymbol: false, yAxisIndex: 1,
-        lineStyle: { width: 1, color: '#94a3b8', opacity: .85 }, itemStyle: { color: '#94a3b8' },
+        lineStyle: { width: 1.4, color: '#dc2626' }, itemStyle: { color: '#dc2626' },
         emphasis: { focus: 'series' }, data: pairDates(dates, ratio) }
     ];
     chart.setOption(opt);
@@ -1720,35 +1727,6 @@
     addZoomHover(styleCard, styleChart);
     registerCard(styleCard, styleChart, '主观风格 大盘 小盘 微盘 红利 双创');
 
-    // 四大风格基金仓位
-    var s4Card = makeCard('四大风格基金总仓位（价值/白马成长/均衡/科技成长）', '%', L.position.asof, true,
-      '科技成长：总仓位93.0%（8周-0.8pt）；价值、均衡基金仓位相对稳定。', 'L四大风格');
-    container.appendChild(s4Card);
-    var s4Chart = echarts.init(s4Card.querySelector('.card-body'));
-    var s4Opt = baseLineOption('%');
-    var s4Names = Object.keys(L.styles4);
-    var s4Series = {};
-    s4Names.forEach(function (k) {
-      var d = L.styles4[k];
-      if (d && d.series && d.series['总仓位']) s4Series[k] = d.series['总仓位'];
-    });
-    if (!Object.keys(s4Series).length) {
-      // 用 dates 长度判断: styles4 value/白马成长 等 key 中找 total
-      s4Names.forEach(function (k) {
-        var d = L.styles4[k];
-        if (d && d.total) s4Series[k] = d.total;
-      });
-    }
-    s4Opt.series = Object.keys(s4Series).map(function (k) {
-      var dates = L.styles4[k].dates || L.position.dates;
-      return { name: k, type: 'line', showSymbol: false, lineStyle: { width: 1.6 },
-        emphasis: { focus: 'series' }, data: pairDates(dates, s4Series[k]) };
-    });
-    s4Chart.setOption(s4Opt);
-    charts.push(s4Chart);
-    addZoomHover(s4Card, s4Chart);
-    registerCard(s4Card, s4Chart, '四大风格 价值 成长 均衡 科技');
-
     // 私募新备案（量化+主观周度）
     var beianCard = makeCard('私募新备案数量（量化 vs 主观 · 周频）', '只', '2026-09-18', true,
       '量化新备案 ' + L.beian.quant_total[L.beian.quant_total.length - 1]
@@ -1797,23 +1775,50 @@
     addZoomHover(mCard, mChart);
     registerCard(mCard, mChart, '两融 融资余额 杠杆');
 
-    // 融资买入额（月度柱状）
-    var mbCard = makeCard('融资买入金额（月度 · 亿元）', '亿', L.margin.buy_dates[L.margin.buy_dates.length - 1], false,
-      '杠杆资金的流量指标。2026年7月买入额 5.5 万亿（月度峰值后回落）。', 'L融资买入');
-    container.appendChild(mbCard);
-    var mbChart = echarts.init(mbCard.querySelector('.card-body'));
-    mbChart.setOption({
-      grid: { left: 52, right: 20, top: 16, bottom: 40 },
-      tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: L.margin.buy_dates.map(function (d) { return d.slice(0, 7); }),
-        axisLabel: { color: '#6b7280', fontSize: 10, rotate: 45 } },
-      yAxis: { type: 'value', axisLabel: { color: '#6b7280', fontSize: 11 },
-        splitLine: { lineStyle: { color: '#eef1f6' } } },
-      series: [{ type: 'bar', barMaxWidth: 24, data: L.margin.buy,
-        itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] } }]
-    });
-    charts.push(mbChart);
-    registerCard(mbCard, mbChart, '融资买入额');
+    // 30日两融余额增量 vs 全A / TMT（双轴，两图并排——.grid 本身为2列）
+    var mi = L.margin_incr;
+    if (mi && mi.dates) {
+      var miLast = mi.dates[mi.dates.length - 1];
+      [
+        { title: '30日两融余额增量 与 全A收盘价', sub: '全A', vals: mi.alla, cid: 'L两融增量全A' },
+        { title: '30日两融余额增量 与 TMT收盘价', sub: '中证TMT', vals: mi.tmt, cid: 'L两融增量TMT' }
+      ].forEach(function (cfg) {
+        var card = makeCard(cfg.title, '亿元', miLast, false,
+          '30日两融余额增量（蓝，左轴，亿元）= 两融余额 − 30个交易日前余额，刻画杠杆资金的月度净流入强度。'
+          + cfg.sub + '收盘价（橙，右轴）叠加对比，观察增量拐点与指数走势的领先/滞后关系。', cfg.cid);
+        container.appendChild(card);
+        var ch = echarts.init(card.querySelector('.card-body'));
+        var o = {
+          grid: { left: 58, right: 58, top: 34, bottom: 52 },
+          legend: { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { fontSize: 11, color: '#4b5563' } },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'cross' },
+            backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+            textStyle: { color: '#1f2430', fontSize: 12 } },
+          xAxis: { type: 'category', data: mi.dates,
+            axisLabel: { color: '#6b7280', fontSize: 10 }, axisLine: { lineStyle: { color: '#d5dae3' } } },
+          yAxis: [
+            { type: 'value', name: '增量', nameTextStyle: { fontSize: 10, color: '#6b7280' },
+              axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef1f6' } } },
+            { type: 'value', name: '收盘', position: 'right', scale: true, nameTextStyle: { fontSize: 10, color: '#d97706' },
+              axisLabel: { color: '#d97706', fontSize: 10 }, splitLine: { show: false } }
+          ],
+          series: [
+            { name: '30日两融余额增量', type: 'line', showSymbol: false, lineStyle: { width: 1.5, color: '#2563eb' },
+              itemStyle: { color: '#2563eb' }, emphasis: { focus: 'series' },
+              data: mi.incr30,
+              markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c3c9d4', width: 1 },
+                data: [{ yAxis: 0, label: { show: false } }] } },
+            { name: cfg.sub + '收盘价', type: 'line', showSymbol: false, yAxisIndex: 1,
+              lineStyle: { width: 1.5, color: '#d97706' }, itemStyle: { color: '#d97706' },
+              emphasis: { focus: 'series' }, data: cfg.vals }
+          ]
+        };
+        ch.setOption(o);
+        charts.push(ch);
+        addZoomHover(card, ch);
+        registerCard(card, ch, '两融 30日增量 ' + cfg.sub + ' 杠杆资金 收盘价');
+      });
+    }
 
     var h3 = document.createElement('div');
     h3.className = 'section-title';
