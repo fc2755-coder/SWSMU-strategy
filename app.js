@@ -1572,10 +1572,23 @@
     var dates = P.dates, diff = P.diff, ratio = P.ratio;
     var li = 0;
     for (var i = 0; i < diff.length; i++) if (diff[i] != null) li = i;
+    // 本对自身的历史极值（动态计算，避免与其他风格对混淆）
+    var exMax = null, exMin = null;
+    for (var k = 0; k < diff.length; k++) {
+      if (diff[k] == null) continue;
+      if (!exMax || diff[k] > exMax[1]) exMax = [dates[k], diff[k]];
+      if (!exMin || diff[k] < exMin[1]) exMin = [dates[k], diff[k]];
+    }
+    var extTxt = '';
+    if (exMax && exMin) {
+      extTxt = '本对历史极值：' + exMax[0].slice(0, 7) + ' 达 ' + (exMax[1] * 100).toFixed(1) + '%，'
+             + exMin[0].slice(0, 7) + ' 达 ' + (exMin[1] * 100).toFixed(1) + '%；'
+             + '当前 ' + (diff[li] * 100).toFixed(2) + '%（' + dates[li] + '）。';
+    }
     var card = makeCard('风格收益差 · ' + P.title, '%', dates[li], true,
       P.a_name + '（' + P.a_code + '）相对 ' + P.b_name + '（' + P.b_code + '）的40个交易日收益差。'
-      + '±10%/±20% 阈值：收益差冲破±20%往往对应风格极致化，'
-      + '随后多出现风格再平衡（如2024-11高−低达+47%历史极值后深度回落）。红线为右轴两指数比价。'
+      + '±10%/±20% 阈值：收益差冲破±20%往往对应风格极致化，随后多出现风格再平衡。'
+      + extTxt + '红线为右轴两指数比价。'
       + (key === 'gv' ? '（分子为国证成长口径）' : ''),
       '风格收益差' + key);
     container.appendChild(card);
