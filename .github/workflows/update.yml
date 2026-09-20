@@ -1,0 +1,37 @@
+name: Weekly Data Update
+
+on:
+  schedule:
+    # 每周六 UTC 12:00 = 北京时间 20:00
+    - cron: '0 12 * * 6'
+  workflow_dispatch: # 允许手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install openpyxl pandas pyarrow requests
+
+      - name: Update data files
+        run: |
+          # 运行数据更新脚本（生成 data/*.json）
+          python scripts/update_all.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || (git commit -m "auto: update data $(date -u '+%Y-%m-%d %H:%M UTC')" && git push)
