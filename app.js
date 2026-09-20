@@ -1852,83 +1852,79 @@
     addZoomHover(eCard, eChart);
     registerCard(eCard, eChart, 'ETF 资金流 净流入 累计');
 
-    var h4 = document.createElement('div');
-    h4.className = 'section-title';
-    h4.textContent = '量化净值（周频）';
-    container.appendChild(h4);
+    // 汇金系 ETF 周度净流入（国家队动向）
+    var hjw = L.huijin_weekly;
+    if (hjw && hjw.weeks && hjw.weeks.length) {
+      var hj = D.hf_macro ? D.hf_macro.huijin : null;
+      var hjCard = makeCard('汇金系 ETF 周度净流入（23只 · 国家队动向）', '亿元', hjw.asof, true,
+        '汇金/中央汇金系 23 只宽基 ETF 的周度净流入（红柱=净申购、绿柱=净赎回），'
+        + '深色线为区间累计净流入（右轴）。用于观察国家队入场的节奏与方向。'
+        + '历史规律：单周净流入突然放大（百亿级）多对应指数阶段性底部区域。', '汇金ETF周度');
+      container.appendChild(hjCard);
+      var hjChart = echarts.init(hjCard.querySelector('.card-body'));
+      var hjOpt = {
+        grid: { left: 62, right: 66, top: 34, bottom: 54 },
+        legend: { top: 2, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { fontSize: 11, color: '#4b5563' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' },
+          backgroundColor: 'rgba(255,255,255,.96)', borderColor: '#e5e8ef',
+          textStyle: { color: '#1f2430', fontSize: 12 } },
+        xAxis: { type: 'category', data: hjw.weeks,
+          axisLabel: { color: '#6b7280', fontSize: 10, rotate: 45 }, axisLine: { lineStyle: { color: '#d5dae3' } } },
+        yAxis: [
+          { type: 'value', name: '周净流入', nameTextStyle: { fontSize: 10, color: '#6b7280' },
+            axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#eef1f6' } } },
+          { type: 'value', name: '累计', position: 'right', nameTextStyle: { fontSize: 10, color: '#334155' },
+            axisLabel: { color: '#334155', fontSize: 10 }, splitLine: { show: false } }
+        ],
+        series: [
+          { name: '周净流入', type: 'bar', barMaxWidth: 22, data: hjw.weekly,
+            itemStyle: { borderRadius: [3, 3, 0, 0], color: function (p) { return p.value >= 0 ? '#dc2626' : '#16a34a'; } } },
+          { name: '累计净流入（右轴）', type: 'line', showSymbol: false, yAxisIndex: 1,
+            lineStyle: { width: 1.8, color: '#334155' }, itemStyle: { color: '#334155' },
+            emphasis: { focus: 'series' }, data: hjw.cum,
+            markLine: { silent: true, symbol: 'none', lineStyle: { color: '#c3c9d4', width: 1 },
+              data: [{ yAxis: 0, label: { show: false } }] } }
+        ]
+      };
+      hjChart.setOption(hjOpt);
+      charts.push(hjChart);
+      addZoomHover(hjCard, hjChart);
+      registerCard(hjCard, hjChart, '汇金 ETF 国家队 周度 净流入 沪深300 中证500 中证1000');
 
-    // 私募量化收益指数（绝对+超额，下拉切换）
-    var ir = L.industry_report || D.liquidity.industry_report;
-    if (ir && ir.strategies && ir.strategies.length) {
-      var irCard = makeCard('私募量化策略收益指数（绝对 / 超额）', '', '2026-09-11', true,
-        '下拉切换策略。指数基期 2020-01-10 = 100。', 'L量化净值');
-      var irHead = irCard.querySelector('.card-header');
-      var irSel = document.createElement('select');
-      irSel.className = 'roll-select';
-      ir.strategies.forEach(function (s) { 
-        var op = document.createElement('option');
-        op.value = s; op.textContent = s;
-        irSel.appendChild(op);
+      // 分组卡片（表格式）
+      var grp = hjw.groups || {};
+      var gKeys = Object.keys(grp).sort(function (a, b) { return grp[b].week - grp[a].week; });
+      var gCard = makeCard('汇金系 ETF 分组净流入（7组 · 本周）', '亿元', hjw.asof, true,
+        '按跟踪指数分组：本周净流入（红=流入、绿=流出）与区间累计。'
+        + '沪深300系是历次托底的主信号，中证500/1000系反映对中小盘的承接力度。', '汇金ETF分组');
+      var gBody = gCard.querySelector('.card-body');
+      gBody.style.height = 'auto';
+      gBody.style.padding = '4px 16px 12px';
+      var gHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+        + '<tr style="color:var(--text-faint);font-size:11px;">'
+        + '<td style="padding:5px 4px;">分组</td><td style="padding:5px 4px;text-align:right;">只数</td>'
+        + '<td style="padding:5px 4px;text-align:right;">本周净流入</td>'
+        + '<td style="padding:5px 4px;text-align:right;">区间累计</td></tr>';
+      gKeys.forEach(function (k) {
+        var v = grp[k];
+        var cw = v.week >= 0 ? 'var(--red)' : 'var(--green)';
+        var cc = v.cum >= 0 ? 'var(--red)' : 'var(--green)';
+        gHtml += '<tr style="border-top:1px solid var(--border);">'
+          + '<td style="padding:5px 4px;">' + k + '</td>'
+          + '<td style="padding:5px 4px;text-align:right;color:var(--text-sub);">' + v.n + '</td>'
+          + '<td style="padding:5px 4px;text-align:right;color:' + cw + ';font-weight:600;">' + (v.week >= 0 ? '+' : '') + v.week.toFixed(2) + '</td>'
+          + '<td style="padding:5px 4px;text-align:right;color:' + cc + ';">' + (v.cum >= 0 ? '+' : '') + v.cum.toFixed(2) + '</td></tr>';
       });
-      irHead.insertBefore(irSel, irCard.querySelector('.card-date'));
-      container.appendChild(irCard);
-      var irChart = echarts.init(irCard.querySelector('.card-body'));
-      var irOpt = baseLineOption('');
-      irChart.setOption(irOpt);
-      var excMode = false;
-      function loadIR() {
-        var idx = ir.strategies.indexOf(irSel.value);
-        if (idx < 0) return;
-        var src = excMode ? ir.exc_series : ir.abs_series;
-        var rows = src.filter(function (r) { return r[idx + 1] != null && r[idx + 1] !== ''; });
-        var data = rows.map(function (r) { return [r[0], r[idx + 1]]; });
-        irChart.setOption({ series: [{ name: irSel.value + (excMode ? '（超额）' : '（绝对）'),
-          type: 'line', showSymbol: false, lineStyle: { width: 1.6, color: '#2563eb' },
-          itemStyle: { color: '#2563eb' }, emphasis: { focus: 'series' }, data: data }] });
+      gHtml += '</table>';
+      if (hj && hj.groups) {
+        gHtml += '<div style="margin-top:8px;font-size:11.5px;color:var(--text-faint);line-height:1.8;">'
+          + '成分：' + Object.keys(hj.groups).map(function (g) { return g + '(' + hj.groups[g].length + ')'; }).join('、')
+          + '</div>';
       }
-      irSel.onchange = function () { loadIR(); };
-      irCard.querySelector('.card-body').addEventListener('dblclick', function () { excMode = !excMode; loadIR(); });
-      loadIR();
-      charts.push(irChart);
-      addZoomHover(irCard, irChart);
-      registerCard(irCard, irChart, '量化净值 指增 收益指数 ' + ir.strategies.join(' '));
+      gBody.innerHTML = gHtml;
+      container.appendChild(gCard);
+      registerCard(gCard, null, '汇金 分组 沪深300 上证50 中证500 中证1000 创业板 科创50');
     }
-
-    // 补充说明卡 + 汇金ETF
-    var note = document.createElement('div');
-    note.className = 'card-note';
-    note.style.marginTop = '10px';
-    note.innerHTML = '待补充指标：公募新发份额（ 月频）、保险新增保费（ 月频）。'
-      + '参考框架：前5%成交占比 46%（集中度指标），突破45%后的回落段为小盘超额窗口。';
-    container.appendChild(note);
-
-    // 汇金ETF框架卡
-    var hjCard = makeCard('汇金系ETF（国家队动向 · 23只）', '', '2026-09-18', true, null, '汇金ETF');
-    var hjb = hjCard.querySelector('.card-body');
-    hjb.style.height = 'auto';
-    hjb.style.padding = '6px 16px 14px';
-    hjb.style.fontSize = '12.5px';
-    hjb.style.lineHeight = '1.9';
-    hjb.style.color = 'var(--text-sub)';
-    var hj = D.hf_macro ? D.hf_macro.huijin : null;
-    if (hj && hj.groups) {
-      var gj = Object.keys(hj.groups);
-      var hjHtml = '<b style="color:var(--text-main);">汇金系ETF分组（7组 · 23只）</b>：<br>';
-      gj.forEach(function (g) {
-        hjHtml += '· <b>' + g + '</b>（' + hj.groups[g].length + '只）：' + hj.groups[g].join(', ') + '<br>';
-      });
-      hjHtml += '<br><b style="color:var(--text-main);">近期动向</b>（09-18）：'
-        + '本周汇金系合计净流入 <b style="color:var(--red);">+109.8亿</b>，其中沪深300系 +16亿（主信号），成长系 +70亿。'
-        + '近5日 +116.8亿，资金面总体平稳，暂无明显国家队进出。'
-        + '<br><b style="color:var(--text-main);">判断框架</b>（周报 0914）：'
-        + '国家队在 3600 点以上托底意愿较弱（人事交替背景），对指数震荡下沿维稳的预期要调低。'
-        + '汇金系 ETF 净流入突然放大 = 国家队入场信号，历史上对应阶段性底部。';
-      hjb.innerHTML = hjHtml;
-    } else {
-      hjb.innerHTML = '汇金系ETF数据待集成。';
-    }
-    container.appendChild(hjCard);
-    registerCard(hjCard, null, '汇金 ETF 国家队 沪深300 上证50 中证1000 红利');
   }
 
   /* ---------------- 海外宏观（美债分解框架） ---------------- */
